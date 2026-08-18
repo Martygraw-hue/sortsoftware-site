@@ -1,0 +1,114 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>SORT Software | Streamlined Small Business Communication</title>
+<meta name="description" content="SORT Software streamlines small business communication via centralized information. Makers of SORT Forms.">
+<link rel="stylesheet" href="/style.css">
+</head>
+<body>
+
+<header class="site">
+  <div class="wrap">
+    <div class="brand">SORT <span>SOFTWARE</span></div>
+    <nav class="site">
+      <a href="#founder">Founder</a>
+      <a href="#contact">Contact</a>
+    </nav>
+  </div>
+</header>
+
+<main>
+  <div class="wrap">
+
+    <div class="hero">
+      <p class="kicker">SORT Software</p>
+      <h1>SORT SOFTWARE Streamlines Small Business Communication via Centralized Information.</h1>
+    </div>
+
+    <section id="founder">
+      <h2>A message from SORT Founder — Bill Graw</h2>
+      <div class="card">
+        <p>I achieved my dream of being an entrepreneur with a diverse portfolio: a restaurant chain, a fleet of food trucks, a bison farm, and even a US patent. I tasted success, but it came at a cost – my time. I was drowning in the chaos of running multiple businesses.</p>
+        <p>One evening, while frantically searching for my to-do list, I asked my wife for help. "Was it on a blue piece of paper, written in sharpie?" she inquired. "Yes!" I replied. Her response: "It went through the wash." It was at that moment I realized there had to be a better way.</p>
+        <p>Surprisingly, there's no solid app or system out there that really solves the problem of small businesses drowning in information. So, I decided to create it for myself.</p>
+        <p>The inspiration? Oddly, a graduate school lecture on the Second Law of Thermodynamics – the tendency towards increasing disorder, more commonly referred to as "Entropy". As crazy as it sounds, I saw the parallel between the universe's drift towards chaos and the daily chaos of running a small business. I set out to build a tool to conquer the daily entropy business owners face.</p>
+        <p>The result was SORT.</p>
+        <p>Now, SORT helps small business owners like me reclaim their lives, providing a simple, effective way to manage everything. My employees love it too, enjoying a clear, easy-to-use standardized system.</p>
+        <p>Let SORT work for you.</p>
+        <p>To learn more about SortSoftware and the SORT App, visit us at <a href="http://sortforms.com">sortforms.com</a>.</p>
+        <p class="sig">Sincerely, Bill Graw</p>
+      </div>
+    </section>
+
+    <section id="contact">
+      <h2>Contact Us</h2>
+      <p>Please fill out the form and a member of our team will get back to you.</p>
+      <form class="contact-form" id="contactForm">
+        <div class="row">
+          <div>
+            <label for="firstName">First name*</label>
+            <input type="text" id="firstName" name="firstName" required>
+          </div>
+          <div>
+            <label for="lastName">Last name*</label>
+            <input type="text" id="lastName" name="lastName" required>
+          </div>
+        </div>
+        <div>
+          <label for="email">Email*</label>
+          <input type="email" id="email" name="email" required>
+        </div>
+        <div>
+          <label for="message">In a few words, how can we help you today?</label>
+          <textarea id="message" name="message"></textarea>
+        </div>
+        <button type="submit">Send</button>
+      </form>
+    </section>
+
+  </div>
+</main>
+
+<footer class="site">
+  <div class="wrap">
+    <div class="links">
+      <a href="/terms-and-conditions">Terms &amp; Conditions</a>
+      <a href="/privacy-policy">Privacy Policy</a>
+      <a href="/refund-policy">Refund Policy</a>
+      <a href="/copy-of-security-policy">Security Policy</a>
+    </div>
+    <div class="social">
+      <a href="#" aria-label="Instagram">Instagram</a>
+      <a href="#" aria-label="Facebook">Facebook</a>
+      <a href="#" aria-label="LinkedIn">LinkedIn</a>
+      <a href="#" aria-label="YouTube">YouTube</a>
+    </div>
+  </div>
+  <div class="wrap" style="margin-top:16px;">
+    &copy; <span id="year"></span> SORT SOFTWARE LLC. All rights reserved.
+  </div>
+</footer>
+
+<script>
+  document.getElementById('year').textContent = new Date().getFullYear();
+
+  document.getElementById('contactForm').addEventListener('submit', function (e) {
+    e.preventDefault();
+    var first = document.getElementById('firstName').value;
+    var last = document.getElementById('lastName').value;
+    var email = document.getElementById('email').value;
+    var message = document.getElementById('message').value;
+    var subject = encodeURIComponent('Website inquiry from ' + first + ' ' + last);
+    var body = encodeURIComponent(
+      'Name: ' + first + ' ' + last + '\n' +
+      'Email: ' + email + '\n\n' +
+      message
+    );
+    window.location.href = 'mailto:help@sortsoftware.com?subject=' + subject + '&body=' + body;
+  });
+</script>
+
+</body>
+</html>
