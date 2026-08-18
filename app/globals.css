@@ -72,3 +72,62 @@ p {
 .btn:active {
   transform: scale(0.98);
 }
+
+/* ---- sortsoftware.com rebuild (08-18): brand motion vocabulary ----
+   Everything below is CSS-only (no Framer Motion on this site) and animates
+   transform/opacity only, so it all runs on the compositor. */
+
+/* Marker highlights — selective brand emphasis inside headlines
+   (same device as sort-connect-site, so the family resemblance reads) */
+.mark-orange {
+  background: linear-gradient(transparent 58%, var(--color-orange-tint) 58%);
+  padding: 0 0.08em;
+}
+.mark-blue {
+  background: linear-gradient(transparent 58%, var(--color-blue-tint) 58%);
+  padding: 0 0.08em;
+}
+
+/* Confetti field — brand dots drifting gently behind the hero, like the
+   dots breaking off the SORT wordmark */
+@keyframes ss-drift {
+  0%   { transform: translate(0, 0); }
+  33%  { transform: translate(var(--dx, 6px), var(--dy, -8px)); }
+  66%  { transform: translate(calc(var(--dx, 6px) * -0.6), calc(var(--dy, -8px) * 0.5)); }
+  100% { transform: translate(0, 0); }
+}
+.ss-dot {
+  animation: ss-drift var(--dur, 9s) ease-in-out infinite;
+  animation-delay: var(--delay, 0s);
+  will-change: transform;
+}
+
+/* Entropy grid — the site's signature move. A field of brand dots starts
+   scattered (each dot carries its own jumble offset --jx/--jy), pulls itself
+   into a clean grid, holds the order, then lets go. Disorder -> order, on
+   repeat. The Second Law, losing. */
+@keyframes ss-settle {
+  0%   { transform: translate(var(--jx, 0px), var(--jy, 0px)) scale(0.92); opacity: 0.55; }
+  38%  { transform: translate(0, 0) scale(1); opacity: 1; }
+  62%  { transform: translate(0, 0) scale(1); opacity: 1; }
+  100% { transform: translate(var(--jx, 0px), var(--jy, 0px)) scale(0.92); opacity: 0.55; }
+}
+.ss-settle {
+  animation: ss-settle var(--sdur, 9s) var(--ease-in-out-strong, cubic-bezier(0.77, 0, 0.175, 1)) infinite;
+  animation-delay: var(--sdelay, 0s);
+  will-change: transform, opacity;
+}
+
+/* Live pulse dot — "shipping / on the clock" marker (ported utility) */
+@keyframes ss-pulse {
+  0%   { box-shadow: 0 0 0 0 rgba(240, 169, 63, 0.55); }
+  70%  { box-shadow: 0 0 0 9px rgba(240, 169, 63, 0); }
+  100% { box-shadow: 0 0 0 0 rgba(240, 169, 63, 0); }
+}
+.ss-pulse { animation: ss-pulse 2s ease-out infinite; }
+
+@media (prefers-reduced-motion: reduce) {
+  .ss-dot, .ss-pulse { animation: none; }
+  /* reduced motion: the grid rests in its ORDERED state — that's the point */
+  .ss-settle { animation: none; transform: translate(0, 0); opacity: 1; }
+}
