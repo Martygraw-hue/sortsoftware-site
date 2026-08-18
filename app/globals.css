@@ -1,0 +1,74 @@
+@import "tailwindcss";
+
+@theme {
+  /* SORT brand — matches sort-connect-site's tokens */
+  --color-paper: #faf8f4;
+  --color-surface: #ffffff;
+  --color-ink: #1a1d21;
+  --color-ink-muted: #5a6068;
+  --color-line: #e8e4dc;
+  --color-field-border: #8c8880;
+  --color-sort-blue: #407ec9;
+  --color-blue-deep: #2d5e99;
+  --color-blue-tint: #eaf1f9;
+  --color-sort-orange: #ffaa4d;
+  --color-orange-deep: #e08a28;
+  --color-orange-text: #C2410C;
+  --color-orange-tint: #fff3e3;
+
+  --font-display: var(--font-schibsted), ui-sans-serif, system-ui, sans-serif;
+  --font-body: var(--font-source-sans), ui-sans-serif, system-ui, sans-serif;
+
+  --ease-out-strong: cubic-bezier(0.23, 1, 0.32, 1);
+  --shadow-frame: 0 8px 30px rgb(26 29 33 / 0.06);
+  --shadow-frame-lg: 0 16px 50px rgb(26 29 33 / 0.09);
+}
+
+:root {
+  color-scheme: light;
+}
+
+html {
+  scroll-behavior: smooth;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  html {
+    scroll-behavior: auto;
+  }
+}
+
+body {
+  background: var(--color-paper);
+  color: var(--color-ink);
+  font-family: var(--font-body);
+  font-kerning: normal;
+  -webkit-font-smoothing: antialiased;
+}
+
+h1, h2, h3 {
+  font-family: var(--font-display);
+  text-wrap: balance;
+}
+
+p {
+  text-wrap: pretty;
+}
+
+::selection {
+  background: var(--color-sort-orange);
+  color: var(--color-ink);
+}
+
+:focus-visible {
+  outline: 2px solid var(--color-blue-deep);
+  outline-offset: 2px;
+  border-radius: 2px;
+}
+
+.btn {
+  transition: transform 160ms var(--ease-out-strong), background-color 180ms ease, border-color 180ms ease, color 180ms ease;
+}
+.btn:active {
+  transform: scale(0.98);
+}
