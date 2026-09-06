@@ -18,6 +18,7 @@
 
   --font-display: var(--font-schibsted), ui-sans-serif, system-ui, sans-serif;
   --font-body: var(--font-source-sans), ui-sans-serif, system-ui, sans-serif;
+  --font-hand: var(--font-caveat), "Comic Sans MS", cursive;
 
   --ease-out-strong: cubic-bezier(0.23, 1, 0.32, 1);
   --shadow-frame: 0 8px 30px rgb(26 29 33 / 0.06);
@@ -73,7 +74,7 @@ p {
   transform: scale(0.98);
 }
 
-/* ---- sortsoftware.com rebuild (08-18): brand motion vocabulary ----
+/* ---- brand motion vocabulary ----
    Everything below is CSS-only (no Framer Motion on this site) and animates
    transform/opacity only, so it all runs on the compositor. */
 
@@ -88,34 +89,15 @@ p {
   padding: 0 0.08em;
 }
 
-/* Confetti field — brand dots drifting gently behind the hero, like the
-   dots breaking off the SORT wordmark */
-@keyframes ss-drift {
-  0%   { transform: translate(0, 0); }
-  33%  { transform: translate(var(--dx, 6px), var(--dy, -8px)); }
-  66%  { transform: translate(calc(var(--dx, 6px) * -0.6), calc(var(--dy, -8px) * 0.5)); }
-  100% { transform: translate(0, 0); }
-}
-.ss-dot {
-  animation: ss-drift var(--dur, 9s) ease-in-out infinite;
-  animation-delay: var(--delay, 0s);
-  will-change: transform;
-}
-
-/* Entropy grid — the site's signature move. A field of brand dots starts
-   scattered (each dot carries its own jumble offset --jx/--jy), pulls itself
-   into a clean grid, holds the order, then lets go. Disorder -> order, on
-   repeat. The Second Law, losing. */
-@keyframes ss-settle {
-  0%   { transform: translate(var(--jx, 0px), var(--jy, 0px)) scale(0.92); opacity: 0.55; }
-  38%  { transform: translate(0, 0) scale(1); opacity: 1; }
-  62%  { transform: translate(0, 0) scale(1); opacity: 1; }
-  100% { transform: translate(var(--jx, 0px), var(--jy, 0px)) scale(0.92); opacity: 0.55; }
-}
-.ss-settle {
-  animation: ss-settle var(--sdur, 9s) var(--ease-in-out-strong, cubic-bezier(0.77, 0, 0.175, 1)) infinite;
-  animation-delay: var(--sdelay, 0s);
-  will-change: transform, opacity;
+/* Cal.com inline embed — crop the branding strip under the booker. The card
+   is overflow-hidden; -85px is the one measured value that hides the
+   watermark in both the month view and the taller booking form without
+   clipping Confirm. Lives in the stylesheet (not only inline) so it survives
+   Cal's script rewriting the iframe's style attribute. */
+.cal-card iframe.cal-embed {
+  margin-top: 0 !important;
+  margin-bottom: -85px !important;
+  display: block !important;
 }
 
 /* Live pulse dot — "shipping / on the clock" marker (ported utility) */
@@ -127,7 +109,67 @@ p {
 .ss-pulse { animation: ss-pulse 2s ease-out infinite; }
 
 @media (prefers-reduced-motion: reduce) {
-  .ss-dot, .ss-pulse { animation: none; }
-  /* reduced motion: the grid rests in its ORDERED state — that's the point */
-  .ss-settle { animation: none; transform: translate(0, 0); opacity: 1; }
+  .ss-pulse { animation: none; }
 }
+
+/* ---- Right Person Routing game ----
+   Notes are dragged with native pointer events; everything here is
+   transform/opacity so it stays on the compositor. */
+.ss-note {
+  transition: transform 420ms var(--ease-out-strong), opacity 300ms ease, box-shadow 200ms ease;
+  touch-action: none;                 /* drag on touch without scrolling the page */
+  -webkit-user-select: none;
+  user-select: none;
+}
+.ss-note.is-dragging {
+  transition: none;
+  z-index: 40;
+  cursor: grabbing;
+  box-shadow: 0 22px 50px rgb(26 29 33 / 0.18);
+}
+.ss-note.is-auto { z-index: 40; }
+
+@keyframes ss-pop {
+  0%   { opacity: 0; scale: 0.72; }
+  60%  { opacity: 1; scale: 1.04; }
+  100% { opacity: 1; scale: 1; }
+}
+.ss-pop { animation: ss-pop 380ms var(--ease-out-strong) both; }
+
+/* tile feedback: a warm ring on the right person, a shrug on the wrong one */
+@keyframes ss-tile-hit {
+  0%   { box-shadow: 0 0 0 0 rgba(255, 170, 77, 0.65); }
+  100% { box-shadow: 0 0 0 14px rgba(255, 170, 77, 0); }
+}
+.ss-tile-hit { animation: ss-tile-hit 650ms ease-out; }
+
+@keyframes ss-tile-miss {
+  0%, 100% { transform: translateX(0); }
+  20%      { transform: translateX(-5px); }
+  40%      { transform: translateX(5px); }
+  60%      { transform: translateX(-3px); }
+  80%      { transform: translateX(3px); }
+}
+.ss-tile-miss { animation: ss-tile-miss 420ms ease-in-out; }
+
+/* phone: new rows drop in from the top, the ticket sheet slides up */
+@keyframes ss-row-in {
+  from { opacity: 0; transform: translateY(-10px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+.ss-row-in { animation: ss-row-in 360ms var(--ease-out-strong) both; }
+
+@keyframes ss-sheet-in {
+  from { opacity: 0; transform: translateY(14px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+.ss-sheet-in { animation: ss-sheet-in 260ms var(--ease-out-strong) both; }
+
+@media (prefers-reduced-motion: reduce) {
+  .ss-note { transition: none; }
+  .ss-pop, .ss-tile-hit, .ss-tile-miss, .ss-row-in, .ss-sheet-in { animation: none; }
+}
+
+
+/* ---- The story: handwriting for the note and the signature ---- */
+.font-hand { font-family: var(--font-hand); }

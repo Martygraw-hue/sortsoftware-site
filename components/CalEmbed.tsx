@@ -91,10 +91,13 @@ export default function CalEmbed({ calLink }: { calLink: string }) {
       el.querySelectorAll("iframe:not([title])").forEach((f) => {
         f.setAttribute("title", "Book a conversation — booking calendar");
       });
-      // crop Cal's branding strip below the booker with inline !important
-      // styles — the card's overflow-hidden clips it. -85px is the one value
-      // that hides the watermark on BOTH the month view and the taller
-      // booking-form view without clipping the form's Confirm button.
+      // crop Cal's branding strip below the booker — the card's
+      // overflow-hidden clips it. -85px is the one value that hides the
+      // watermark on BOTH the month view and the taller booking-form view
+      // without clipping the form's Confirm button. Belt and braces: the
+      // same crop lives in globals.css (`.cal-card iframe.cal-embed`) so it
+      // holds even when Cal's script rewrites the iframe's style attribute
+      // after we've set it — the observer below also watches for that.
       el.querySelectorAll("iframe:not(.cal-fallback)").forEach((f) => {
         const st = (f as HTMLIFrameElement).style;
         if (st.getPropertyValue("margin-bottom") !== "-85px") {
@@ -104,7 +107,12 @@ export default function CalEmbed({ calLink }: { calLink: string }) {
         }
       });
     });
-    observer.observe(el, { childList: true, subtree: true });
+    observer.observe(el, {
+      childList: true,
+      subtree: true,
+      attributes: true,
+      attributeFilter: ["style"],
+    });
 
     // FALLBACK: consent/script blockers (e.g. Termly's auto-block) can
     // neutralize Cal.com's embed.js — visitors would see an empty page. If no
@@ -147,7 +155,7 @@ export default function CalEmbed({ calLink }: { calLink: string }) {
   }, [calLink]);
 
   return (
-    <div className="overflow-hidden rounded-2xl border border-line bg-surface shadow-frame">
+    <div className="cal-card overflow-hidden rounded-2xl border border-line bg-surface shadow-frame">
       <div ref={ref} style={{ width: "100%" }} />
     </div>
   );

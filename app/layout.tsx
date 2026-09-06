@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import Script from "next/script";
 import TermlyInit from "@/components/TermlyInit";
-import { Schibsted_Grotesk, Source_Sans_3 } from "next/font/google";
+import { Schibsted_Grotesk, Source_Sans_3, Caveat } from "next/font/google";
 import Nav from "@/components/Nav";
 import Footer from "@/components/Footer";
 import "./globals.css";
@@ -15,6 +15,14 @@ const schibsted = Schibsted_Grotesk({
 const sourceSans = Source_Sans_3({
   subsets: ["latin"],
   variable: "--font-source-sans",
+  display: "swap",
+});
+
+// Sharpie handwriting — used ONLY for the blue note in Our Story
+const caveat = Caveat({
+  subsets: ["latin"],
+  weight: ["600"],
+  variable: "--font-caveat",
   display: "swap",
 });
 
@@ -35,7 +43,7 @@ export default function RootLayout({
   children,
 }: Readonly<{ children: React.ReactNode }>) {
   return (
-    <html lang="en" className={`${schibsted.variable} ${sourceSans.variable}`}>
+    <html lang="en" className={`${schibsted.variable} ${sourceSans.variable} ${caveat.variable}`}>
       <body suppressHydrationWarning>
         {/* Termly consent banner + tracker auto-blocking — ported from
             sort-connect-site so the consent flow matches. This site loads

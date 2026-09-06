@@ -3,14 +3,13 @@ import Image from "next/image";
 
 /**
  * Nav — floating pill in the family style of sortconnect.com, scoped to this
- * site's single-page structure: the SORT wordmark, four section anchors, and
+ * site's single-page structure: the SORT wordmark, three section anchors, and
  * one orange action out to the live product site.
  * Server component on purpose — no scroll listeners, no hamburger, no JS.
  */
 const links = [
-  { href: "/#apps", label: "Apps" },
-  { href: "/#story", label: "Why SORT" },
-  { href: "/#founder", label: "Founder" },
+  { href: "/#play", label: "Play" },
+  { href: "/#story", label: "Our Story" },
   { href: "/#contact", label: "Contact" },
 ];
 
@@ -29,27 +28,28 @@ export default function Nav() {
           />
         </Link>
 
-        {/* quiet middle: section anchors */}
-        <nav aria-label="Main" className="hidden items-center gap-7 md:flex">
-          {links.map((l) => (
-            <Link
-              key={l.href}
-              href={l.href}
-              className="text-[15px] font-semibold text-ink-muted transition-colors duration-150 hover:text-blue-deep"
-            >
-              {l.label}
-            </Link>
-          ))}
-        </nav>
+        {/* right-leaning group: section anchors + the product-site button */}
+        <div className="flex items-center gap-9">
+          <nav aria-label="Main" className="hidden items-center gap-7 md:flex">
+            {links.map((l) => (
+              <Link
+                key={l.href}
+                href={l.href}
+                className="text-[15px] font-semibold text-ink-muted transition-colors duration-150 hover:text-blue-deep"
+              >
+                {l.label}
+              </Link>
+            ))}
+          </nav>
 
-        {/* loud right: out to the product site */}
-        <a
-          href="https://www.sortconnect.com"
-          className="btn rounded-full bg-sort-orange px-5 py-2.5 text-[15px] font-semibold text-ink hover:bg-orange-deep"
-        >
-          Visit Us
-          <span aria-hidden className="ml-1.5">↗</span>
-        </a>
+          <a
+            href="https://www.sortconnect.com"
+            className="btn rounded-full bg-sort-orange px-5 py-2.5 text-[15px] font-semibold text-ink hover:bg-orange-deep"
+          >
+            Visit Us
+            <span aria-hidden className="ml-1.5">↗</span>
+          </a>
+        </div>
       </div>
     </header>
   );
