@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import Script from "next/script";
 import TermlyInit from "@/components/TermlyInit";
-import { Schibsted_Grotesk, Source_Sans_3, Caveat } from "next/font/google";
+import { Schibsted_Grotesk, Source_Sans_3, Caveat, Rubik_Mono_One } from "next/font/google";
 import Nav from "@/components/Nav";
 import Footer from "@/components/Footer";
 import "./globals.css";
@@ -26,6 +26,14 @@ const caveat = Caveat({
   display: "swap",
 });
 
+// Chunky game face — used ONLY for the Play section's title card (GameTitle)
+const rubikMono = Rubik_Mono_One({
+  subsets: ["latin"],
+  weight: "400",
+  variable: "--font-rubik-mono",
+  display: "swap",
+});
+
 export const metadata: Metadata = {
   title: {
     default: "Sort Software | Makers of Sort & Admin",
@@ -43,7 +51,7 @@ export default function RootLayout({
   children,
 }: Readonly<{ children: React.ReactNode }>) {
   return (
-    <html lang="en" className={`${schibsted.variable} ${sourceSans.variable} ${caveat.variable}`}>
+    <html lang="en" className={`${schibsted.variable} ${sourceSans.variable} ${caveat.variable} ${rubikMono.variable}`}>
       <body suppressHydrationWarning>
         {/* Termly consent banner + tracker auto-blocking — ported from
             sort-connect-site so the consent flow matches. This site loads

@@ -1,10 +1,17 @@
 "use client";
 
-import { useCallback, useEffect, useLayoutEffect, useRef, useState } from "react";
+import {
+  useCallback,
+  useEffect,
+  useLayoutEffect,
+  useRef,
+  useState,
+} from "react";
 import AdminPhone, { type Ticket } from "./AdminPhone";
 import FloorPlan, { type Pin } from "./FloorPlan";
-import { SPOTS, STAGE_H, STAGE_W, type Spot } from "./stage";
-import { PEOPLE, REQUESTS, type PersonId, type Request } from "./requests";
+import { STAGE_H, STAGE_W, type Spot } from "./stage";
+import { INDUSTRIES, type Request } from "./industries";
+import GameTitle, { GameProgress } from "./GameTitle";
 
 /**
  * RoutingGame — Right Person Routing as a heads-up display.
@@ -53,23 +60,25 @@ function shuffle<T>(a: T[]): T[] {
   return out;
 }
 
-const clamp = (v: number, lo: number, hi: number) => Math.min(hi, Math.max(lo, v));
+/** Gameplay switch. false = the floor sits still (no requests spawn, nothing
+ *  routes) so the layout can be judged on its own. Flip to true to run it. */
+const GAMEPLAY = false;
+
+const clamp = (v: number, lo: number, hi: number) =>
+  Math.min(hi, Math.max(lo, v));
 
 const timeNow = () =>
   new Date().toLocaleTimeString([], { hour: "numeric", minute: "2-digit" });
-
-const clockNow = () =>
-  `${new Date().toLocaleDateString([], { weekday: "long" })} ${timeNow()}`;
 
 export default function RoutingGame() {
   const [notes, setNotes] = useState<Note[]>([]);
   const [tickets, setTickets] = useState<Ticket[]>([]);
   const [count, setCount] = useState(0);
-  const [hit, setHit] = useState<Partial<Record<PersonId, boolean>>>({});
+  const [industryIx, setIndustryIx] = useState(0);
+  const industry = INDUSTRIES[industryIx];
   const [layout, setLayout] = useState<Layout>({ w: STAGE_W, h: STAGE_H });
   const [tx, setTx] = useState(0);
-  const [clock, setClock] = useState("");
-  const [phoneScale, setPhoneScale] = useState(0.92);
+  const [phoneScale, setPhoneScale] = useState(1);
 
   const notesRef = useRef<Note[]>([]);
   notesRef.current = notes;
@@ -98,7 +107,7 @@ export default function RoutingGame() {
   /* ---------- environment ---------- */
   useEffect(() => {
     const mq = window.matchMedia("(min-width: 1024px)");
-    const apply = () => setPhoneScale(mq.matches ? 0.92 : 0.82);
+    const apply = () => setPhoneScale(mq.matches ? 1 : 0.82);
     apply();
     mq.addEventListener("change", apply);
     const rm = window.matchMedia("(prefers-reduced-motion: reduce)");
@@ -109,12 +118,6 @@ export default function RoutingGame() {
       mq.removeEventListener("change", apply);
       rm.removeEventListener("change", applyRm);
     };
-  }, []);
-
-  useEffect(() => {
-    setClock(clockNow());
-    const id = window.setInterval(() => setClock(clockNow()), 30_000);
-    return () => clearInterval(id);
   }, []);
 
   // the board's real size decides the stage scale (and whether we pan)
@@ -156,12 +159,17 @@ export default function RoutingGame() {
     (n: Note) => {
       setNotes((ns) => ns.filter((x) => x.id !== n.id));
       setTickets((ts) => [
-        { id: n.id, text: n.req.text, from: n.req.from, person: n.req.to, status: "assigned", time: timeNow() },
+        {
+          id: n.id,
+          text: n.req.text,
+          from: n.req.from,
+          person: industry.people.find((p) => p.id === n.req.to)!,
+          status: "assigned",
+          time: timeNow(),
+        },
         ...ts,
       ]);
       setCount((c) => c + 1);
-      setHit((h) => ({ ...h, [n.req.to]: true }));
-      later(() => setHit((h) => ({ ...h, [n.req.to]: false })), 800);
     },
     [later],
   );
@@ -171,7 +179,9 @@ export default function RoutingGame() {
     (id: number) => {
       const n = notesRef.current.find((x) => x.id === id && x.state === "in");
       if (!n) return;
-      setNotes((ns) => ns.map((x) => (x.id === id ? { ...x, state: "out" } : x)));
+      setNotes((ns) =>
+        ns.map((x) => (x.id === id ? { ...x, state: "out" } : x)),
+      );
       const el = bubbleEls.current.get(id);
       const ph = phoneRef.current?.getBoundingClientRect();
       if (!el || !ph || reduced.current) {
@@ -180,7 +190,8 @@ export default function RoutingGame() {
       }
       const r = el.getBoundingClientRect();
       const dx = ph.left + ph.width / 2 - (r.left + r.width / 2);
-      const dy = ph.top + Math.min(ph.height * 0.34, 210) - (r.top + r.height / 2);
+      const dy =
+        ph.top + Math.min(ph.height * 0.34, 210) - (r.top + r.height / 2);
       el.style.transition = `transform ${FLY_MS}ms ${EASE}, opacity ${FLY_MS - 200}ms ease 120ms`;
       el.style.transform = `translate(${dx}px, ${dy}px) scale(0.28)`;
       el.style.opacity = "0";
@@ -192,10 +203,10 @@ export default function RoutingGame() {
   /* ---------- spawning ---------- */
   const nextRequest = useCallback((): Request => {
     const onBoard = new Set(notesRef.current.map((n) => n.req.text));
-    if (bag.current.length === 0) bag.current = shuffle(REQUESTS);
+    if (bag.current.length === 0) bag.current = shuffle(industry.requests);
     let pick = bag.current.pop()!;
     let guard = 0;
-    while (onBoard.has(pick.text) && guard++ < REQUESTS.length) {
+    while (onBoard.has(pick.text) && guard++ < industry.requests.length) {
       bag.current.unshift(pick);
       pick = bag.current.pop()!;
     }
@@ -209,9 +220,11 @@ export default function RoutingGame() {
     const live = notesRef.current;
     // a spot in the request's zone whose bubble won't sit on top of one
     // that's already up — else put the request back and try next tick
-    const open = SPOTS[req.zone].filter((s) =>
+    const open = industry.spots[req.zone].filter((s) =>
       live.every(
-        (n) => Math.abs(n.spot.x - s.x) * kk > BUBBLE_W + 8 || Math.abs(n.spot.y - s.y) * kk > 76,
+        (n) =>
+          Math.abs(n.spot.x - s.x) * kk > BUBBLE_W + 8 ||
+          Math.abs(n.spot.y - s.y) * kk > 76,
       ),
     );
     if (!open.length) {
@@ -227,6 +240,7 @@ export default function RoutingGame() {
   }, [nextRequest, panTo, fly, later]);
 
   useEffect(() => {
+    if (!GAMEPLAY) return;
     // steady arrivals: quicker as the count climbs, never frantic; on a
     // panning board (phones) one request at a time so the camera can follow
     lastSpawn.current = Date.now() - 3400 + FIRST_MS;
@@ -235,7 +249,8 @@ export default function RoutingGame() {
       const lay = layoutRef.current;
       const max = STAGE_W * (lay.h / STAGE_H) > lay.w + 1 ? 1 : 3;
       if (live >= max) return;
-      const gap = Math.max(2200, 3400 - countRef.current * 60) + (live ? 600 : 0);
+      const gap =
+        Math.max(2200, 3400 - countRef.current * 60) + (live ? 600 : 0);
       if (Date.now() - lastSpawn.current < gap) return;
       spawn();
     }, 250);
@@ -256,17 +271,33 @@ export default function RoutingGame() {
     setNotes([]);
     setTickets([]);
     setCount(0);
-    setHit({});
     bag.current = [];
     lastSpawn.current = Date.now() - 3400 + 400;
   };
 
+  /** switch the floor: clear the run, then swap the plan, people and requests */
+  const pickIndustry = (ix: number) => {
+    reset();
+    bag.current = [];
+    setIndustryIx(ix);
+  };
+
   const resolve = (id: number) => {
-    setTickets((ts) => ts.map((t) => (t.id === id ? { ...t, status: "resolved" } : t)));
+    setTickets((ts) =>
+      ts.map((t) => (t.id === id ? { ...t, status: "resolved" } : t)),
+    );
   };
 
   /* ---------- bubble placement (board pixels, inside the camera) ---------- */
-  const place = (spot: Spot): { left: number; top?: number; bottom?: number; tailClass: string; tail: number } => {
+  const place = (
+    spot: Spot,
+  ): {
+    left: number;
+    top?: number;
+    bottom?: number;
+    tailClass: string;
+    tail: number;
+  } => {
     const vx = spot.x * k;
     const vy = spot.y * k;
     const minL = -tx + 6;
@@ -276,150 +307,120 @@ export default function RoutingGame() {
     const above = vy > 78;
     return {
       left,
-      ...(above ? { bottom: layout.h - (vy - TAIL_GAP) } : { top: vy + TAIL_GAP }),
+      ...(above
+        ? { bottom: layout.h - (vy - TAIL_GAP) }
+        : { top: vy + TAIL_GAP }),
       tailClass: above ? "tail-b" : "tail-t",
       tail,
     };
   };
 
-  const pins: Pin[] = notes.map((n) => ({ id: n.id, x: n.spot.x, y: n.spot.y, out: n.state === "out" }));
-  const perPerson = tickets.reduce<Partial<Record<PersonId, number>>>((acc, t) => {
-    acc[t.person] = (acc[t.person] ?? 0) + 1;
-    return acc;
-  }, {});
+  const pins: Pin[] = notes.map((n) => ({
+    id: n.id,
+    x: n.spot.x,
+    y: n.spot.y,
+    out: n.state === "out",
+  }));
 
   /* ---------- render ---------- */
   return (
-    <div className="grid items-start gap-10 lg:grid-cols-[1fr_auto] lg:gap-14">
-      <div className="@container min-w-0">
-        {/* the floor: one surface, the plan scaled to fit, the camera on top.
+    <>
+      <GameTitle
+        label={industry.label}
+        prevLabel={
+          INDUSTRIES[(industryIx + INDUSTRIES.length - 1) % INDUSTRIES.length]
+            .label
+        }
+        nextLabel={INDUSTRIES[(industryIx + 1) % INDUSTRIES.length].label}
+        onPrev={() =>
+          pickIndustry((industryIx + INDUSTRIES.length - 1) % INDUSTRIES.length)
+        }
+        onNext={() => pickIndustry((industryIx + 1) % INDUSTRIES.length)}
+      />
+      <div className="grid items-start gap-10 lg:grid-cols-[1fr_auto] lg:gap-20">
+        <div className="@container min-w-0">
+          {/* the floor: one surface, the plan scaled to fit, the camera on top.
             Height follows the width (the stage's ratio) down to a floor of
             311px — set with container units rather than aspect-ratio, which
             would transfer that floor into a min-width and overflow phones. */}
-        <div
-          ref={boardRef}
-          className="relative h-[max(311px,calc(100cqw*432/760))] overflow-hidden rounded-[28px] border border-line bg-surface shadow-frame"
-        >
           <div
-            className="ss-cam absolute inset-0"
-            style={{ transform: `translateX(${tx}px)` }}
+            ref={boardRef}
+            className="relative h-[max(311px,calc(100cqw*432/760))] overflow-hidden rounded-[28px] border border-line bg-surface shadow-frame"
           >
             <div
-              className="absolute left-0 top-0 origin-top-left"
-              style={{ width: STAGE_W, height: STAGE_H, transform: `scale(${k})` }}
+              className="ss-cam absolute inset-0"
+              style={{ transform: `translateX(${tx}px)` }}
             >
-              <FloorPlan pins={pins} />
+              <div
+                className="absolute left-0 top-0 origin-top-left"
+                style={{
+                  width: STAGE_W,
+                  height: STAGE_H,
+                  transform: `scale(${k})`,
+                }}
+              >
+                <FloorPlan pins={pins} plan={industry.plan} />
+              </div>
+
+              {notes.map((n) => {
+                const p = place(n.spot);
+                return (
+                  <div
+                    key={n.id}
+                    ref={(el) => {
+                      if (el) bubbleEls.current.set(n.id, el);
+                      else bubbleEls.current.delete(n.id);
+                    }}
+                    className={`ss-bubble ss-pop ${p.tailClass}`}
+                    style={{
+                      left: p.left,
+                      top: p.top,
+                      bottom: p.bottom,
+                      width: BUBBLE_W,
+                      ["--tail" as string]: `${p.tail}px`,
+                    }}
+                  >
+                    <span className="flex items-center gap-1.5 text-[10.5px] font-bold uppercase tracking-[0.1em] text-ink-muted">
+                      <span
+                        aria-hidden
+                        className="inline-block h-1.5 w-1.5 rounded-full bg-sort-orange"
+                      />
+                      {n.req.from}
+                    </span>
+                    <span className="mt-0.5 block text-[13.5px] font-semibold leading-[1.25] text-ink">
+                      {n.req.text}
+                    </span>
+                  </div>
+                );
+              })}
             </div>
 
-            {notes.map((n) => {
-              const p = place(n.spot);
-              return (
-                <div
-                  key={n.id}
-                  ref={(el) => {
-                    if (el) bubbleEls.current.set(n.id, el);
-                    else bubbleEls.current.delete(n.id);
-                  }}
-                  className={`ss-bubble ss-pop ${p.tailClass}`}
-                  style={{
-                    left: p.left,
-                    top: p.top,
-                    bottom: p.bottom,
-                    width: BUBBLE_W,
-                    ["--tail" as string]: `${p.tail}px`,
-                  }}
-                >
-                  <span className="flex items-center gap-1.5 text-[10.5px] font-bold uppercase tracking-[0.1em] text-ink-muted">
-                    <span aria-hidden className="inline-block h-1.5 w-1.5 rounded-full bg-sort-orange" />
-                    {n.req.from}
-                  </span>
-                  <span className="mt-0.5 block text-[13.5px] font-semibold leading-[1.25] text-ink">
-                    {n.req.text}
-                  </span>
-                </div>
-              );
-            })}
+            <span className="sr-only">
+              Requests from around {industry.business} pop up on the floor plan
+              and are routed to the one person who can act on them. The inbox on
+              the phone shows each one as it lands.
+            </span>
           </div>
 
-          {/* the HUD strip */}
-          <div className="pointer-events-none absolute inset-x-3.5 bottom-2.5 flex items-center justify-between">
-            <span className="flex items-center gap-2.5 whitespace-nowrap rounded-full bg-ink py-1.5 pl-2.5 pr-3.5 font-display text-[11px] font-bold uppercase tracking-[0.12em] text-white">
-              <span aria-hidden className="ss-pulse inline-block h-2 w-2 rounded-full bg-sort-orange" />
-              Live
-              <span className="hidden font-body text-[12.5px] font-semibold normal-case tracking-normal text-[#b8bcc2] sm:inline">
-                Street Cafe{clock ? ` · ${clock}` : ""}
-              </span>
-            </span>
-            <span
-              className="flex items-baseline gap-1.5 rounded-full border border-line bg-surface py-1 pl-3 pr-3.5"
-              aria-live="polite"
-            >
-              <span className="font-display text-[20px] font-bold leading-none tabular-nums text-ink">
-                {count}
-              </span>
-              <span className="font-display text-[11px] font-bold uppercase tracking-[0.14em] text-ink-muted">
-                routed
-              </span>
-            </span>
-          </div>
-          <span className="sr-only">
-            Requests from around Street Cafe pop up on the floor plan and are routed to the one person
-            who can act on them. The inbox on the phone shows each one as it lands.
-          </span>
+          {/* the scoreboard: routed progress, in its own card under the floor */}
+          <GameProgress
+            routed={count}
+            resolved={tickets.filter((t) => t.status === "resolved").length}
+            total={industry.requests.length}
+            onReset={reset}
+          />
         </div>
 
-        {/* the people — who each request lands on */}
-        <ul className="mt-5 grid grid-cols-2 gap-3 sm:grid-cols-4">
-          {PEOPLE.map((p) => {
-            const on = hit[p.id];
-            const n = perPerson[p.id] ?? 0;
-            return (
-              <li
-                key={p.id}
-                className={`relative flex select-none items-center gap-3 rounded-2xl border-2 bg-surface px-3.5 py-3 transition-colors ${
-                  on ? "ss-tile-hit border-sort-orange" : "border-line"
-                }`}
-              >
-                <span
-                  aria-hidden
-                  className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-full font-display text-[13px] font-bold transition-colors ${
-                    on ? "bg-sort-orange text-ink" : "bg-blue-deep text-white"
-                  }`}
-                >
-                  {on ? "✓" : p.initials}
-                </span>
-                <span className="min-w-0">
-                  <span className="block truncate font-display text-[16px] font-bold text-ink">{p.name}</span>
-                  <span className="block truncate text-[13px] text-ink-muted">{p.role}</span>
-                </span>
-                {n > 0 && (
-                  <span
-                    className="absolute -top-2.5 right-3 rounded-full bg-ink px-2 py-0.5 text-[11px] font-bold tabular-nums text-white"
-                    aria-label={`${n} routed to ${p.name}`}
-                  >
-                    {n}
-                  </span>
-                )}
-              </li>
-            );
-          })}
-        </ul>
-
-        <p className="mt-3 text-right text-[13px]">
-          <button
-            type="button"
-            onClick={reset}
-            className="font-semibold text-ink-muted underline-offset-4 hover:text-blue-deep hover:underline"
-          >
-            Start over
-          </button>
-        </p>
+        {/* the phone */}
+        <div ref={phoneRef} className="mx-auto">
+          <AdminPhone
+            tickets={tickets}
+            business={industry.business}
+            onResolve={resolve}
+            scale={phoneScale}
+          />
+        </div>
       </div>
-
-      {/* the phone */}
-      <div ref={phoneRef} className="mx-auto">
-        <AdminPhone tickets={tickets} onResolve={resolve} scale={phoneScale} />
-      </div>
-    </div>
+    </>
   );
 }

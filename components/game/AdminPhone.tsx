@@ -1,11 +1,11 @@
 "use client";
 
 import { useState } from "react";
-import { personById, type PersonId } from "./requests";
+import type { Person } from "./industries";
 
 /**
  * AdminPhone — the Sort Admin inbox, fed by the routing game beside it.
- * The chrome (iPhone frame, status bar, STREET CAFE header, tabs, row
+ * The chrome (iPhone frame, status bar, business-name header, tabs, row
  * grammar) is ported from sortconnect.com's AppInbox so it reads as the same
  * product; the rows here are live — every note routed in the game lands at
  * the top, assigned to whoever you picked. Tap a row to open it, resolve it,
@@ -16,7 +16,7 @@ export type Ticket = {
   id: number;
   text: string;
   from: string;
-  person: PersonId;
+  person: Person;
   status: "assigned" | "resolved";
   time: string;
 };
@@ -28,8 +28,10 @@ export default function AdminPhone({
   tickets,
   onResolve,
   scale = 1,
+  business,
 }: {
   tickets: Ticket[];
+  business: string;
   onResolve: (id: number) => void;
   scale?: number;
 }) {
@@ -44,12 +46,18 @@ export default function AdminPhone({
     >
       <div
         className="origin-top-left rounded-[2.7rem] bg-ink p-[7px] shadow-frame-lg"
-        style={{ width: SCREEN_W, height: SCREEN_H, transform: `scale(${scale})` }}
+        style={{
+          width: SCREEN_W,
+          height: SCREEN_H,
+          transform: `scale(${scale})`,
+        }}
       >
         <div className="relative h-full overflow-hidden rounded-[2.3rem] bg-[#F2F4F9]">
           {/* status bar */}
           <div className="flex items-center justify-between px-6 pt-3 text-ink">
-            <span className="text-[12.5px] font-semibold tabular-nums">9:42</span>
+            <span className="text-[12.5px] font-semibold tabular-nums">
+              9:42
+            </span>
             <span className="flex items-center gap-1.5" aria-hidden>
               <Signal />
               <Wifi />
@@ -60,7 +68,7 @@ export default function AdminPhone({
           {/* org header */}
           <div className="flex items-start justify-between px-5 pt-3">
             <div className="font-display text-[24px] font-bold tracking-tight text-[#25355C]">
-              STREET CAFE
+              {business.toUpperCase()}
             </div>
             <span
               aria-hidden
@@ -98,7 +106,9 @@ export default function AdminPhone({
           {tickets.length === 0 ? (
             <div className="mx-4 mt-6 rounded-xl border border-dashed border-[#C9D1E2] px-4 py-6 text-center">
               <span className="ss-pulse mx-auto mb-3 block h-2.5 w-2.5 rounded-full bg-sort-orange" />
-              <p className="text-[12.5px] font-semibold text-[#25355C]">Inbox is clear.</p>
+              <p className="text-[12.5px] font-semibold text-[#25355C]">
+                Inbox is clear.
+              </p>
               <p className="mt-1 text-[11.5px] text-[#686E7F]">
                 Route a note and it lands here.
               </p>
@@ -106,7 +116,7 @@ export default function AdminPhone({
           ) : (
             <ul className="space-y-2 px-4 pb-12 pt-1.5">
               {tickets.map((t) => {
-                const p = personById(t.person);
+                const p = t.person;
                 const done = t.status === "resolved";
                 return (
                   <li key={t.id} className="ss-row-in">
@@ -139,7 +149,9 @@ export default function AdminPhone({
                       <div className="mt-0.5 flex items-baseline justify-between gap-2">
                         <p
                           className={`truncate text-[11.5px] ${
-                            done ? "text-[#A3ABBD] line-through" : "text-[#686E7F]"
+                            done
+                              ? "text-[#A3ABBD] line-through"
+                              : "text-[#686E7F]"
                           }`}
                         >
                           {t.text}
@@ -180,7 +192,7 @@ export default function AdminPhone({
                   Inbox
                 </button>
                 <div className="mt-2 font-display text-[20px] font-extrabold tracking-tight">
-                  {personById(open.person).tag}
+                  {open.person.tag}
                 </div>
                 <div className="text-[12px] font-semibold tracking-[0.12em] text-white/85">
                   SUBMISSION
@@ -197,9 +209,9 @@ export default function AdminPhone({
                 <Field label="Assigned to">
                   <Box>
                     <span className="font-semibold text-[#2A6FBC]">
-                      {personById(open.person).name}
+                      {open.person.name}
                     </span>{" "}
-                    · {personById(open.person).role}
+                    · {open.person.role}
                   </Box>
                 </Field>
               </div>
@@ -242,7 +254,13 @@ export default function AdminPhone({
   );
 }
 
-function Field({ label, children }: { label: string; children: React.ReactNode }) {
+function Field({
+  label,
+  children,
+}: {
+  label: string;
+  children: React.ReactNode;
+}) {
   return (
     <div>
       <p className="mb-1 text-[11px] font-semibold text-[#3A4256]">{label}</p>
@@ -251,7 +269,13 @@ function Field({ label, children }: { label: string; children: React.ReactNode }
   );
 }
 
-function Box({ children, tall = false }: { children: React.ReactNode; tall?: boolean }) {
+function Box({
+  children,
+  tall = false,
+}: {
+  children: React.ReactNode;
+  tall?: boolean;
+}) {
   return (
     <div
       className={`rounded-xl border-2 border-[#E2E6F0] bg-white px-3 py-2 text-[12px] text-[#3A4256] shadow-[0_1px_2px_rgba(26,29,33,0.04)] ${
@@ -276,7 +300,15 @@ function Signal() {
 }
 function Wifi() {
   return (
-    <svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round">
+    <svg
+      width="14"
+      height="14"
+      viewBox="0 0 16 16"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="1.8"
+      strokeLinecap="round"
+    >
       <path d="M1.5 6a10 10 0 0 1 13 0" />
       <path d="M4 8.8a6.2 6.2 0 0 1 8 0" />
       <path d="M6.4 11.5a2.6 2.6 0 0 1 3.2 0" />
@@ -287,7 +319,16 @@ function Wifi() {
 function Battery() {
   return (
     <svg width="17" height="17" viewBox="0 0 20 16" fill="currentColor">
-      <rect x="1" y="3" width="15" height="10" rx="2.5" fill="none" stroke="currentColor" strokeWidth="1.4" />
+      <rect
+        x="1"
+        y="3"
+        width="15"
+        height="10"
+        rx="2.5"
+        fill="none"
+        stroke="currentColor"
+        strokeWidth="1.4"
+      />
       <rect x="3" y="5" width="11" height="6" rx="1.2" />
       <rect x="17" y="6" width="2" height="4" rx="0.8" />
     </svg>
@@ -302,7 +343,15 @@ function Coffee() {
 }
 function Magnifier() {
   return (
-    <svg width="17" height="17" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round">
+    <svg
+      width="17"
+      height="17"
+      viewBox="0 0 16 16"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="2"
+      strokeLinecap="round"
+    >
       <circle cx="6.8" cy="6.8" r="4.6" />
       <path d="M10.4 10.4 14 14" />
     </svg>
@@ -310,14 +359,32 @@ function Magnifier() {
 }
 function CaretLeft() {
   return (
-    <svg width="15" height="15" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
+    <svg
+      width="15"
+      height="15"
+      viewBox="0 0 16 16"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="2.2"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+    >
       <path d="M10.5 2.5 5 8l5.5 5.5" />
     </svg>
   );
 }
 function Check() {
   return (
-    <svg width="15" height="15" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round">
+    <svg
+      width="15"
+      height="15"
+      viewBox="0 0 16 16"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="2.4"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+    >
       <path d="M2.5 8.5 6 12l7.5-8" />
     </svg>
   );

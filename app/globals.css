@@ -19,6 +19,7 @@
   --font-display: var(--font-schibsted), ui-sans-serif, system-ui, sans-serif;
   --font-body: var(--font-source-sans), ui-sans-serif, system-ui, sans-serif;
   --font-hand: var(--font-caveat), "Comic Sans MS", cursive;
+  --font-game: var(--font-rubik-mono), "Arial Black", ui-sans-serif, sans-serif;
 
   --ease-out-strong: cubic-bezier(0.23, 1, 0.32, 1);
   --shadow-frame: 0 8px 30px rgb(26 29 33 / 0.06);
@@ -125,6 +126,7 @@ p {
 .ss-plan .seat  { fill: var(--color-paper); stroke: #b9b4aa; stroke-width: 1.2; }
 .ss-plan .gap   { fill: none; stroke: var(--color-surface); stroke-width: 5; }
 .ss-plan .swing { fill: none; stroke: #b9b4aa; stroke-width: 1; stroke-dasharray: 3 3; }
+.ss-plan .pict  { fill: #b9b4aa; stroke: none; }
 .ss-plan .zone,
 .ss-plan .tiny  {
   font-family: var(--font-display);
@@ -219,3 +221,6 @@ p {
 
 /* ---- The story: handwriting for the note and the signature ---- */
 .font-hand { font-family: var(--font-hand); }
+
+/* ---- Play: the game face for the title card ---- */
+.font-game { font-family: var(--font-game); }

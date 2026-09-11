@@ -1,4 +1,3 @@
-import Image from "next/image";
 import CalEmbed from "@/components/CalEmbed";
 import FounderLetter from "@/components/story/FounderLetter";
 import RoutingGame from "@/components/game/RoutingGame";
@@ -22,27 +21,15 @@ export default function Home() {
     <>
       {/* ---- 1. The game ---- */}
       <section id="play" className="scroll-mt-24">
-        <div className="mx-auto flex min-h-[calc(100svh-96px)] max-w-[1160px] items-center px-6 py-10 lg:px-8">
+        <div className="mx-auto flex min-h-[calc(100svh-96px)] max-w-[1280px] items-start px-6 pb-10 pt-9 lg:px-8 lg:pt-12">
           <div className="w-full">
-            <h1 className="mb-8 flex items-center justify-center gap-[0.28em] text-center text-[clamp(1.9rem,2.6vw+0.7rem,2.7rem)] font-bold leading-[1.1] lg:mb-10">
-              <span>Take</span>
-              <Image
-                src="/brand/logo-black.png"
-                alt="SORT"
-                width={380}
-                height={227}
-                priority
-                className="inline-block h-[2.1em] w-auto"
-              />
-              <span>for a spin</span>
-            </h1>
             <RoutingGame />
           </div>
         </div>
       </section>
 
       {/* ---- 2. Contact ---- */}
-      <section id="contact" className="scroll-mt-24 border-t border-line">
+      <section id="contact" className="scroll-mt-24 border-t border-line bg-surface">
         <div className="mx-auto max-w-[1160px] px-6 py-20 lg:px-8 lg:py-24">
           <h2 className="text-center text-[clamp(1.7rem,2.2vw+0.6rem,2.3rem)] font-bold leading-[1.12]">
             Hey, let&rsquo;s chat.
@@ -61,8 +48,8 @@ export default function Home() {
         </div>
       </section>
       {/* ---- 3. The story ---- */}
-      <section id="story" className="scroll-mt-24 border-t border-line bg-surface">
-        <div className="mx-auto max-w-[1160px] px-6 py-12 lg:px-8 lg:py-16">
+      <section id="story" className="scroll-mt-24 border-t border-line">
+        <div className="mx-auto max-w-[1160px] px-6 py-16 lg:px-8 lg:py-20">
           <h2 className="sr-only">Our Story</h2>
           <FounderLetter />
         </div>

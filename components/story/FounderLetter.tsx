@@ -26,14 +26,14 @@ export default function FounderLetter() {
             priority={false}
           />
           <div className="leading-none">
-            <p className="text-[16px] font-bold text-ink">Bill Graw</p>
-            <p className="mt-1.5 text-[12.5px] font-semibold uppercase tracking-[0.06em] text-ink-muted">
+            <p className="text-[17px] font-bold text-ink">Bill Graw</p>
+            <p className="mt-1.5 text-[13px] font-semibold uppercase tracking-[0.06em] text-ink-muted">
               Founder
             </p>
           </div>
         </div>
         <div className="flex items-end gap-4">
-          <span className="hidden pb-1 font-display text-[11.5px] font-bold uppercase tracking-[0.18em] text-ink-muted sm:inline">
+          <span className="hidden pb-1 font-display text-[12.5px] font-bold uppercase tracking-[0.18em] text-ink-muted sm:inline">
             A letter from the founder
           </span>
           <Image
@@ -48,8 +48,8 @@ export default function FounderLetter() {
 
       {/* ---- the letter: salutation on its own row, then two justified,
               hyphenated columns whose tops line up ---- */}
-      <p className="mb-5 text-[17px] leading-[1.7] text-ink">Dear Operator,</p>
-      <div className="text-justify text-[17px] leading-[1.7] text-ink [hyphens:auto] [text-wrap:pretty] [&_p+p]:mt-5 lg:columns-2 lg:gap-x-14">
+      <p className="mb-5 text-[18px] leading-[1.72] text-ink">Dear Operator,</p>
+      <div className="text-justify text-[18px] leading-[1.72] text-ink [hyphens:auto] [text-wrap:pretty] [&_p+p]:mt-5 lg:columns-2 lg:gap-x-14">
         <p className="break-inside-avoid">
           I achieved my dream of being an entrepreneur with a diverse portfolio:
           a restaurant chain, a fleet of food trucks, a bison operation I ran from
