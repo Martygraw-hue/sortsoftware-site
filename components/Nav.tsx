@@ -9,8 +9,8 @@ import Image from "next/image";
  */
 const links = [
   { href: "/#play", label: "Play" },
-  { href: "/#story", label: "Our Story" },
   { href: "/#contact", label: "Contact" },
+  { href: "/#story", label: "Our Story" },
 ];
 
 export default function Nav() {

@@ -1,42 +1,44 @@
 "use client";
 
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useLayoutEffect, useRef, useState } from "react";
 import AdminPhone, { type Ticket } from "./AdminPhone";
-import { PEOPLE, REQUESTS, personById, type PersonId, type Request } from "./requests";
+import FloorPlan, { type Pin } from "./FloorPlan";
+import { SPOTS, STAGE_H, STAGE_W, type Spot } from "./stage";
+import { PEOPLE, REQUESTS, type PersonId, type Request } from "./requests";
 
 /**
- * RoutingGame — Right Person Routing as a thing you do.
+ * RoutingGame — Right Person Routing as a heads-up display.
  *
- * Notes from a Friday-night shift at Street Cafe drift onto the counter.
- * Drag each one to the person who can act on it. Right person: it snaps in
- * and flies into the Admin inbox on the phone, assigned to them. Wrong
- * person: they hand it back. No timer, no losing — a counter climbs.
+ * Street Cafe's floor plan is the board. A request pops up where it actually
+ * happened — a stool at the bar, table 6, the host stand — glows there for a
+ * beat, then flies into the Admin inbox on the phone, already assigned to
+ * the one person who can act on it. Nobody drags anything; you watch a
+ * Friday night sort itself out. The phone stays live: tap a ticket, resolve
+ * it, the task count drops.
  *
- * It plays itself when idle (a note glides to the right tile every few
- * seconds) so the page is alive for someone who never touches it — which is
- * also the demo.
- *
- * Mechanics are native pointer events + CSS transforms; no motion library.
- * Touch users can also tap a note, then tap a person.
+ * The plan is drawn on a fixed 760×432 stage (stage.ts) and scaled to fit the board.
+ * When the board is too narrow to hold the whole plan legibly (phones), the
+ * stage keeps a minimum scale and the camera pans to wherever the current
+ * request came from. Everything animates with transform/opacity only — no
+ * motion library on this site.
  */
 
 type Note = {
   id: number;
   req: Request;
-  slot: number;
-  rot: number;
-  jx: number;
-  jy: number;
-  state: "idle" | "auto" | "out";
+  spot: Spot;
+  state: "in" | "out";
 };
 
-const MAX_NOTES = 4;
-const SLOT_COLS = 3;
-const SLOT_ROWS = 2;
-const IDLE_MS_FRESH = 4200; // before anyone has touched it: stay lively
-const IDLE_MS_PLAYED = 9000; // once they've played: give them room
-const AUTO_GAP_MS = 3400; // spacing between self-routed notes
-const FIRST_AUTO_MS = 2600; // first self-route after load
+type Layout = { w: number; h: number };
+
+// The board's CSS min-height (311px = 0.72 × the stage) is what stops the
+// plan shrinking further on phones; past that point the camera pans instead.
+const BUBBLE_W = 176;
+const TAIL_GAP = 14; // distance from the pin to the bubble's edge
+const DWELL_MS = 2600; // how long a request sits on the floor
+const FLY_MS = 620;
+const FIRST_MS = 700;
 
 const EASE = "cubic-bezier(0.23, 1, 0.32, 1)";
 
@@ -51,59 +53,146 @@ function shuffle<T>(a: T[]): T[] {
   return out;
 }
 
+const clamp = (v: number, lo: number, hi: number) => Math.min(hi, Math.max(lo, v));
+
 const timeNow = () =>
   new Date().toLocaleTimeString([], { hour: "numeric", minute: "2-digit" });
+
+const clockNow = () =>
+  `${new Date().toLocaleDateString([], { weekday: "long" })} ${timeNow()}`;
 
 export default function RoutingGame() {
   const [notes, setNotes] = useState<Note[]>([]);
   const [tickets, setTickets] = useState<Ticket[]>([]);
   const [count, setCount] = useState(0);
-  const [selected, setSelected] = useState<number | null>(null);
-  const [tileFx, setTileFx] = useState<Record<string, "hit" | "miss" | undefined>>({});
+  const [hit, setHit] = useState<Partial<Record<PersonId, boolean>>>({});
+  const [layout, setLayout] = useState<Layout>({ w: STAGE_W, h: STAGE_H });
+  const [tx, setTx] = useState(0);
+  const [clock, setClock] = useState("");
   const [phoneScale, setPhoneScale] = useState(0.92);
-
-  useEffect(() => {
-    const mq = window.matchMedia("(min-width: 1024px)");
-    const apply = () => setPhoneScale(mq.matches ? 0.92 : 0.82);
-    apply();
-    mq.addEventListener("change", apply);
-    return () => mq.removeEventListener("change", apply);
-  }, []);
 
   const notesRef = useRef<Note[]>([]);
   notesRef.current = notes;
   const countRef = useRef(0);
   countRef.current = count;
+  const layoutRef = useRef<Layout>(layout);
+  layoutRef.current = layout;
 
   const bag = useRef<Request[]>([]);
-  const noteEls = useRef(new Map<number, HTMLElement>());
-  const tileEls = useRef(new Map<PersonId, HTMLElement>());
-  const phoneRef = useRef<HTMLDivElement>(null);
+  const bubbleEls = useRef(new Map<number, HTMLElement>());
   const boardRef = useRef<HTMLDivElement>(null);
+  const phoneRef = useRef<HTMLDivElement>(null);
+  const timers = useRef(new Set<number>());
+  const lastSpawn = useRef(0);
+  const reduced = useRef(false);
 
-  const lastInteract = useRef(0);
-  const lastAuto = useRef(0);
-  const played = useRef(false);
-  const drag = useRef<{
-    id: number;
-    el: HTMLElement;
-    sx: number;
-    sy: number;
-    dx: number;
-    dy: number;
-    moved: boolean;
-  } | null>(null);
+  const later = useCallback((fn: () => void, ms: number) => {
+    const id = window.setTimeout(() => {
+      timers.current.delete(id);
+      fn();
+    }, ms);
+    timers.current.add(id);
+    return id;
+  }, []);
 
-  const touch = () => {
-    lastInteract.current = Date.now();
-    played.current = true;
-  };
+  /* ---------- environment ---------- */
+  useEffect(() => {
+    const mq = window.matchMedia("(min-width: 1024px)");
+    const apply = () => setPhoneScale(mq.matches ? 0.92 : 0.82);
+    apply();
+    mq.addEventListener("change", apply);
+    const rm = window.matchMedia("(prefers-reduced-motion: reduce)");
+    const applyRm = () => (reduced.current = rm.matches);
+    applyRm();
+    rm.addEventListener("change", applyRm);
+    return () => {
+      mq.removeEventListener("change", apply);
+      rm.removeEventListener("change", applyRm);
+    };
+  }, []);
+
+  useEffect(() => {
+    setClock(clockNow());
+    const id = window.setInterval(() => setClock(clockNow()), 30_000);
+    return () => clearInterval(id);
+  }, []);
+
+  // the board's real size decides the stage scale (and whether we pan)
+  useLayoutEffect(() => {
+    const el = boardRef.current;
+    if (!el) return;
+    const measure = () => {
+      const r = el.getBoundingClientRect();
+      setLayout({ w: r.width, h: r.height });
+    };
+    measure();
+    const ro = new ResizeObserver(measure);
+    ro.observe(el);
+    return () => ro.disconnect();
+  }, []);
+
+  /* ---------- geometry ---------- */
+  const k = layout.h / STAGE_H;
+  const stageW = STAGE_W * k;
+  const panning = stageW > layout.w + 1;
+
+  /** camera offset that centres a stage point, clamped to the plan's edges */
+  const panTo = useCallback((spot: Spot, lay: Layout) => {
+    const kk = lay.h / STAGE_H;
+    const sw = STAGE_W * kk;
+    if (sw <= lay.w + 1) return 0;
+    return clamp(lay.w / 2 - spot.x * kk, lay.w - sw, 0);
+  }, []);
+
+  useEffect(() => {
+    // keep the camera honest if the board resizes mid-note
+    const live = notesRef.current.filter((n) => n.state === "in");
+    const last = live[live.length - 1];
+    setTx(last ? panTo(last.spot, layout) : (t) => (panning ? t : 0));
+  }, [layout, panning, panTo]);
+
+  /* ---------- routing ---------- */
+  const land = useCallback(
+    (n: Note) => {
+      setNotes((ns) => ns.filter((x) => x.id !== n.id));
+      setTickets((ts) => [
+        { id: n.id, text: n.req.text, from: n.req.from, person: n.req.to, status: "assigned", time: timeNow() },
+        ...ts,
+      ]);
+      setCount((c) => c + 1);
+      setHit((h) => ({ ...h, [n.req.to]: true }));
+      later(() => setHit((h) => ({ ...h, [n.req.to]: false })), 800);
+    },
+    [later],
+  );
+
+  /** Fly the bubble into the phone and turn it into a ticket. */
+  const fly = useCallback(
+    (id: number) => {
+      const n = notesRef.current.find((x) => x.id === id && x.state === "in");
+      if (!n) return;
+      setNotes((ns) => ns.map((x) => (x.id === id ? { ...x, state: "out" } : x)));
+      const el = bubbleEls.current.get(id);
+      const ph = phoneRef.current?.getBoundingClientRect();
+      if (!el || !ph || reduced.current) {
+        land(n);
+        return;
+      }
+      const r = el.getBoundingClientRect();
+      const dx = ph.left + ph.width / 2 - (r.left + r.width / 2);
+      const dy = ph.top + Math.min(ph.height * 0.34, 210) - (r.top + r.height / 2);
+      el.style.transition = `transform ${FLY_MS}ms ${EASE}, opacity ${FLY_MS - 200}ms ease 120ms`;
+      el.style.transform = `translate(${dx}px, ${dy}px) scale(0.28)`;
+      el.style.opacity = "0";
+      later(() => land(n), FLY_MS - 80);
+    },
+    [land, later],
+  );
 
   /* ---------- spawning ---------- */
   const nextRequest = useCallback((): Request => {
     const onBoard = new Set(notesRef.current.map((n) => n.req.text));
     if (bag.current.length === 0) bag.current = shuffle(REQUESTS);
-    // skip anything already on the counter
     let pick = bag.current.pop()!;
     let guard = 0;
     while (onBoard.has(pick.text) && guard++ < REQUESTS.length) {
@@ -114,342 +203,207 @@ export default function RoutingGame() {
   }, []);
 
   const spawn = useCallback(() => {
-    const cur = notesRef.current;
-    if (cur.length >= MAX_NOTES) return;
-    const used = new Set(cur.map((n) => n.slot));
-    const free: number[] = [];
-    for (let s = 0; s < SLOT_COLS * SLOT_ROWS; s++) if (!used.has(s)) free.push(s);
-    if (!free.length) return;
-    const slot = free[Math.floor(Math.random() * free.length)];
-    const note: Note = {
-      id: nextId++,
-      req: nextRequest(),
-      slot,
-      rot: (Math.random() - 0.5) * 9,
-      jx: (Math.random() - 0.5) * 22,
-      jy: (Math.random() - 0.5) * 16,
-      state: "idle",
-    };
-    setNotes((n) => [...n, note]);
-  }, [nextRequest]);
-
-  useEffect(() => {
-    // first three land quickly so the counter isn't empty on arrival
-    const t0 = setTimeout(spawn, 250);
-    const t1 = setTimeout(spawn, 900);
-    const t2 = setTimeout(spawn, 1700);
-    return () => {
-      clearTimeout(t0);
-      clearTimeout(t1);
-      clearTimeout(t2);
-    };
-  }, [spawn]);
-
-  useEffect(() => {
-    // steady arrivals: quicker as the count climbs, never frantic
-    let alive = true;
-    let handle = 0;
-    const loop = () => {
-      if (!alive) return;
-      const interval = Math.max(1900, 3800 - countRef.current * 90);
-      handle = window.setTimeout(() => {
-        spawn();
-        loop();
-      }, interval);
-    };
-    loop();
-    return () => {
-      alive = false;
-      clearTimeout(handle);
-    };
-  }, [spawn]);
-
-  /* ---------- geometry helpers ---------- */
-  const baseTransform = (n: Note) => `translate(${n.jx}px, ${n.jy}px) rotate(${n.rot}deg)`;
-
-  const tileAt = (x: number, y: number): PersonId | null => {
-    for (const [id, el] of tileEls.current) {
-      const r = el.getBoundingClientRect();
-      if (x >= r.left - 8 && x <= r.right + 8 && y >= r.top - 8 && y <= r.bottom + 8) return id;
-    }
-    return null;
-  };
-
-  const flash = (id: PersonId, kind: "hit" | "miss") => {
-    setTileFx((f) => ({ ...f, [id]: kind }));
-    window.setTimeout(() => setTileFx((f) => ({ ...f, [id]: undefined })), kind === "hit" ? 700 : 1100);
-  };
-
-  const snapBack = (n: Note, el: HTMLElement) => {
-    el.style.transition = `transform 420ms ${EASE}`;
-    el.style.transform = baseTransform(n);
-  };
-
-  /** Fly the note into the phone and turn it into a ticket. */
-  const deliver = (n: Note, el: HTMLElement, dx: number, dy: number) => {
-    const r = el.getBoundingClientRect();
-    const baseX = r.left + r.width / 2 - dx;
-    const baseY = r.top + r.height / 2 - dy;
-    const ph = phoneRef.current?.getBoundingClientRect();
-    const tx = ph ? ph.left + ph.width / 2 : baseX;
-    const ty = ph ? ph.top + Math.min(ph.height * 0.34, 210) : baseY - 120;
-    el.style.transition = `transform 560ms ${EASE}, opacity 420ms ease 120ms`;
-    el.style.transform = `translate(${tx - baseX + n.jx}px, ${ty - baseY + n.jy}px) rotate(0deg) scale(0.28)`;
-    el.style.opacity = "0";
-    el.style.pointerEvents = "none";
-    setNotes((ns) => ns.map((x) => (x.id === n.id ? { ...x, state: "out" } : x)));
-    window.setTimeout(() => {
-      setNotes((ns) => ns.filter((x) => x.id !== n.id));
-      setTickets((ts) => [
-        { id: n.id, text: n.req.text, from: n.req.from, person: n.req.to, status: "assigned", time: timeNow() },
-        ...ts,
-      ]);
-      setCount((c) => c + 1);
-    }, 520);
-  };
-
-  const attempt = (n: Note, to: PersonId, el: HTMLElement, dx: number, dy: number) => {
-    setSelected(null);
-    if (n.req.to === to) {
-      flash(to, "hit");
-      deliver(n, el, dx, dy);
-    } else {
-      flash(to, "miss");
-      snapBack(n, el);
-      setNotes((ns) => ns.map((x) => (x.id === n.id ? { ...x, state: "idle" } : x)));
-    }
-  };
-
-  /* ---------- pointer handling ---------- */
-  const onPointerDown = (e: React.PointerEvent<HTMLElement>, n: Note) => {
-    if (n.state !== "idle") return;
-    touch();
-    e.preventDefault(); // no text selection / focus shuffle while dragging across the tiles
-    const el = e.currentTarget;
-    el.setPointerCapture(e.pointerId);
-    el.style.transition = "none";
-    el.classList.add("is-dragging");
-    drag.current = { id: n.id, el, sx: e.clientX, sy: e.clientY, dx: 0, dy: 0, moved: false };
-  };
-
-  const onPointerMove = (e: React.PointerEvent<HTMLElement>) => {
-    const d = drag.current;
-    if (!d) return;
-    d.dx = e.clientX - d.sx;
-    d.dy = e.clientY - d.sy;
-    if (Math.abs(d.dx) > 4 || Math.abs(d.dy) > 4) d.moved = true;
-    d.el.style.transform = `translate(${d.dx}px, ${d.dy}px) rotate(0deg) scale(1.05)`;
-  };
-
-  const onPointerUp = (e: React.PointerEvent<HTMLElement>, n: Note) => {
-    const d = drag.current;
-    if (!d || d.id !== n.id) return;
-    drag.current = null;
-    touch();
-    const el = d.el;
-    try {
-      el.releasePointerCapture(e.pointerId);
-    } catch {}
-    el.classList.remove("is-dragging");
-
-    if (!d.moved) {
-      // a tap: select / deselect (touch + keyboard path)
-      setSelected((s) => (s === n.id ? null : n.id));
-      snapBack(n, el);
+    const req = nextRequest();
+    const lay = layoutRef.current;
+    const kk = lay.h / STAGE_H;
+    const live = notesRef.current;
+    // a spot in the request's zone whose bubble won't sit on top of one
+    // that's already up — else put the request back and try next tick
+    const open = SPOTS[req.zone].filter((s) =>
+      live.every(
+        (n) => Math.abs(n.spot.x - s.x) * kk > BUBBLE_W + 8 || Math.abs(n.spot.y - s.y) * kk > 76,
+      ),
+    );
+    if (!open.length) {
+      bag.current.push(req);
       return;
     }
-    const hit = tileAt(e.clientX, e.clientY);
-    if (hit) attempt(n, hit, el, d.dx, d.dy);
-    else snapBack(n, el);
-  };
+    const spot = open[Math.floor(Math.random() * open.length)];
+    const note: Note = { id: nextId++, req, spot, state: "in" };
+    lastSpawn.current = Date.now();
+    setNotes((ns) => [...ns, note]);
+    setTx(panTo(spot, lay));
+    later(() => fly(note.id), DWELL_MS);
+  }, [nextRequest, panTo, fly, later]);
 
-  const onTileClick = (pid: PersonId) => {
-    touch();
-    if (selected == null) return;
-    const n = notesRef.current.find((x) => x.id === selected && x.state === "idle");
-    const el = n && noteEls.current.get(n.id);
-    const tile = tileEls.current.get(pid);
-    if (!n || !el || !tile) return;
-    // glide from the note's spot to the tile, then judge it
-    setNotes((ns) => ns.map((x) => (x.id === n.id ? { ...x, state: "auto" } : x)));
-    const a = el.getBoundingClientRect();
-    const b = tile.getBoundingClientRect();
-    const dx = b.left + b.width / 2 - (a.left + a.width / 2);
-    const dy = b.top + b.height / 2 - (a.top + a.height / 2);
-    el.style.transition = `transform 480ms ${EASE}`;
-    el.style.transform = `translate(${dx + n.jx}px, ${dy + n.jy}px) rotate(0deg) scale(0.9)`;
-    window.setTimeout(() => attempt(n, pid, el, dx + n.jx, dy + n.jy), 470);
-  };
-
-  /* ---------- self-play when idle ---------- */
   useEffect(() => {
-    lastInteract.current = Date.now() - IDLE_MS_FRESH + FIRST_AUTO_MS;
+    // steady arrivals: quicker as the count climbs, never frantic; on a
+    // panning board (phones) one request at a time so the camera can follow
+    lastSpawn.current = Date.now() - 3400 + FIRST_MS;
     const id = window.setInterval(() => {
-      const now = Date.now();
-      if (drag.current) return;
-      const idle = played.current ? IDLE_MS_PLAYED : IDLE_MS_FRESH;
-      if (now - lastInteract.current < idle) return;
-      if (now - lastAuto.current < AUTO_GAP_MS) return;
-      const n = notesRef.current.find((x) => x.state === "idle");
-      const el = n && noteEls.current.get(n.id);
-      const tile = n && tileEls.current.get(n.req.to);
-      if (!n || !el || !tile) return;
-      lastAuto.current = now;
-      setNotes((ns) => ns.map((x) => (x.id === n.id ? { ...x, state: "auto" } : x)));
-      const a = el.getBoundingClientRect();
-      const b = tile.getBoundingClientRect();
-      const dx = b.left + b.width / 2 - (a.left + a.width / 2);
-      const dy = b.top + b.height / 2 - (a.top + a.height / 2);
-      el.style.transition = `transform 1100ms ${EASE}`;
-      el.style.transform = `translate(${dx + n.jx}px, ${dy + n.jy}px) rotate(0deg) scale(0.92)`;
-      window.setTimeout(() => attempt(n, n.req.to, el, dx + n.jx, dy + n.jy), 1080);
-    }, 400);
+      const live = notesRef.current.filter((n) => n.state === "in").length;
+      const lay = layoutRef.current;
+      const max = STAGE_W * (lay.h / STAGE_H) > lay.w + 1 ? 1 : 3;
+      if (live >= max) return;
+      const gap = Math.max(2200, 3400 - countRef.current * 60) + (live ? 600 : 0);
+      if (Date.now() - lastSpawn.current < gap) return;
+      spawn();
+    }, 250);
     return () => clearInterval(id);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [spawn]);
+
+  useEffect(() => {
+    const t = timers.current;
+    return () => {
+      for (const id of t) clearTimeout(id);
+      t.clear();
+    };
   }, []);
 
   const reset = () => {
-    touch();
+    for (const id of timers.current) clearTimeout(id);
+    timers.current.clear();
     setNotes([]);
     setTickets([]);
     setCount(0);
-    setSelected(null);
+    setHit({});
     bag.current = [];
-    window.setTimeout(spawn, 200);
-    window.setTimeout(spawn, 700);
+    lastSpawn.current = Date.now() - 3400 + 400;
   };
 
   const resolve = (id: number) => {
-    touch();
     setTickets((ts) => ts.map((t) => (t.id === id ? { ...t, status: "resolved" } : t)));
   };
+
+  /* ---------- bubble placement (board pixels, inside the camera) ---------- */
+  const place = (spot: Spot): { left: number; top?: number; bottom?: number; tailClass: string; tail: number } => {
+    const vx = spot.x * k;
+    const vy = spot.y * k;
+    const minL = -tx + 6;
+    const maxL = -tx + layout.w - BUBBLE_W - 6;
+    const left = clamp(vx - 29, minL, Math.max(minL, maxL));
+    const tail = clamp(vx - left, 21, BUBBLE_W - 21); // tail centre, in bubble px
+    const above = vy > 78;
+    return {
+      left,
+      ...(above ? { bottom: layout.h - (vy - TAIL_GAP) } : { top: vy + TAIL_GAP }),
+      tailClass: above ? "tail-b" : "tail-t",
+      tail,
+    };
+  };
+
+  const pins: Pin[] = notes.map((n) => ({ id: n.id, x: n.spot.x, y: n.spot.y, out: n.state === "out" }));
+  const perPerson = tickets.reduce<Partial<Record<PersonId, number>>>((acc, t) => {
+    acc[t.person] = (acc[t.person] ?? 0) + 1;
+    return acc;
+  }, {});
 
   /* ---------- render ---------- */
   return (
     <div className="grid items-start gap-10 lg:grid-cols-[1fr_auto] lg:gap-14">
-      {/* the counter — one surface, the number in its corner, one line of
-          instruction that leaves once you've routed something */}
-      <div>
+      <div className="@container min-w-0">
+        {/* the floor: one surface, the plan scaled to fit, the camera on top.
+            Height follows the width (the stage's ratio) down to a floor of
+            311px — set with container units rather than aspect-ratio, which
+            would transfer that floor into a min-width and overflow phones. */}
         <div
           ref={boardRef}
-          className="relative h-[320px] overflow-visible rounded-[28px] border border-line bg-surface shadow-frame sm:h-[360px] lg:h-[400px]"
+          className="relative h-[max(311px,calc(100cqw*432/760))] overflow-hidden rounded-[28px] border border-line bg-surface shadow-frame"
         >
           <div
-            aria-hidden
-            className="pointer-events-none absolute inset-0 rounded-[28px] opacity-[0.55] [background:radial-gradient(circle_at_1px_1px,var(--color-line)_1px,transparent_0)] [background-size:22px_22px]"
-          />
-
-          <p
-            className="pointer-events-none absolute bottom-4 right-5 flex items-baseline gap-2"
-            aria-live="polite"
+            className="ss-cam absolute inset-0"
+            style={{ transform: `translateX(${tx}px)` }}
           >
-            <span className="font-display text-[34px] font-bold leading-none tabular-nums text-ink">
-              {count}
-            </span>
-            <span className="font-display text-[12px] font-bold uppercase tracking-[0.14em] text-ink-muted">
-              routed
-            </span>
-          </p>
+            <div
+              className="absolute left-0 top-0 origin-top-left"
+              style={{ width: STAGE_W, height: STAGE_H, transform: `scale(${k})` }}
+            >
+              <FloorPlan pins={pins} />
+            </div>
 
-          <p
-            aria-hidden
-            className={`pointer-events-none absolute bottom-4 left-5 text-[14px] text-ink-muted transition-opacity duration-500 ${
-              count > 0 ? "opacity-0" : "opacity-100"
-            }`}
-          >
-            Drag each note to the right person.
-          </p>
+            {notes.map((n) => {
+              const p = place(n.spot);
+              return (
+                <div
+                  key={n.id}
+                  ref={(el) => {
+                    if (el) bubbleEls.current.set(n.id, el);
+                    else bubbleEls.current.delete(n.id);
+                  }}
+                  className={`ss-bubble ss-pop ${p.tailClass}`}
+                  style={{
+                    left: p.left,
+                    top: p.top,
+                    bottom: p.bottom,
+                    width: BUBBLE_W,
+                    ["--tail" as string]: `${p.tail}px`,
+                  }}
+                >
+                  <span className="flex items-center gap-1.5 text-[10.5px] font-bold uppercase tracking-[0.1em] text-ink-muted">
+                    <span aria-hidden className="inline-block h-1.5 w-1.5 rounded-full bg-sort-orange" />
+                    {n.req.from}
+                  </span>
+                  <span className="mt-0.5 block text-[13.5px] font-semibold leading-[1.25] text-ink">
+                    {n.req.text}
+                  </span>
+                </div>
+              );
+            })}
+          </div>
+
+          {/* the HUD strip */}
+          <div className="pointer-events-none absolute inset-x-3.5 bottom-2.5 flex items-center justify-between">
+            <span className="flex items-center gap-2.5 whitespace-nowrap rounded-full bg-ink py-1.5 pl-2.5 pr-3.5 font-display text-[11px] font-bold uppercase tracking-[0.12em] text-white">
+              <span aria-hidden className="ss-pulse inline-block h-2 w-2 rounded-full bg-sort-orange" />
+              Live
+              <span className="hidden font-body text-[12.5px] font-semibold normal-case tracking-normal text-[#b8bcc2] sm:inline">
+                Street Cafe{clock ? ` · ${clock}` : ""}
+              </span>
+            </span>
+            <span
+              className="flex items-baseline gap-1.5 rounded-full border border-line bg-surface py-1 pl-3 pr-3.5"
+              aria-live="polite"
+            >
+              <span className="font-display text-[20px] font-bold leading-none tabular-nums text-ink">
+                {count}
+              </span>
+              <span className="font-display text-[11px] font-bold uppercase tracking-[0.14em] text-ink-muted">
+                routed
+              </span>
+            </span>
+          </div>
           <span className="sr-only">
-            Notes arrive on the counter. Select a note, then choose the person who should handle it.
+            Requests from around Street Cafe pop up on the floor plan and are routed to the one person
+            who can act on them. The inbox on the phone shows each one as it lands.
           </span>
-
-          {notes.map((n) => {
-            const col = n.slot % SLOT_COLS;
-            const row = Math.floor(n.slot / SLOT_COLS);
-            const left = `${5 + col * 31.5}%`;
-            const top = `${13 + row * 44}%`;
-            const isSel = selected === n.id;
-            return (
-              <button
-                key={n.id}
-                type="button"
-                ref={(el) => {
-                  if (el) noteEls.current.set(n.id, el);
-                  else noteEls.current.delete(n.id);
-                }}
-                onPointerDown={(e) => onPointerDown(e, n)}
-                onPointerMove={onPointerMove}
-                onPointerUp={(e) => onPointerUp(e, n)}
-                onPointerCancel={(e) => onPointerUp(e, n)}
-                aria-pressed={isSel}
-                aria-label={`Note from ${n.req.from}: ${n.req.text}. ${isSel ? "Selected — now choose a person." : "Select, then choose a person."}`}
-                className={`ss-note ss-pop absolute w-[28%] min-w-[150px] cursor-grab select-none rounded-2xl border bg-paper px-3.5 py-3 text-left shadow-frame ${
-                  isSel ? "border-sort-orange ring-[3px] ring-sort-orange/40" : "border-line"
-                } ${n.state === "auto" ? "is-auto pointer-events-none" : ""}`}
-                style={{ left, top, transform: baseTransform(n) }}
-              >
-                <span className="flex items-center gap-1.5 text-[11.5px] font-bold uppercase tracking-[0.1em] text-ink-muted">
-                  <span aria-hidden className="inline-block h-1.5 w-1.5 rounded-full bg-sort-orange" />
-                  {n.req.from}
-                </span>
-                <span className="mt-1 block text-[14.5px] font-semibold leading-snug text-ink">
-                  {n.req.text}
-                </span>
-              </button>
-            );
-          })}
         </div>
 
-        {/* the people */}
-        <div className="mt-5 grid grid-cols-2 gap-3 sm:grid-cols-4">
+        {/* the people — who each request lands on */}
+        <ul className="mt-5 grid grid-cols-2 gap-3 sm:grid-cols-4">
           {PEOPLE.map((p) => {
-            const fx = tileFx[p.id];
+            const on = hit[p.id];
+            const n = perPerson[p.id] ?? 0;
             return (
-              <button
+              <li
                 key={p.id}
-                type="button"
-                ref={(el) => {
-                  if (el) tileEls.current.set(p.id, el);
-                  else tileEls.current.delete(p.id);
-                }}
-                onClick={() => onTileClick(p.id)}
-                aria-label={`${p.name}, ${p.role}${selected != null ? " — route the selected note here" : ""}`}
-                className={`ss-tile relative flex select-none items-center gap-3 rounded-2xl border-2 bg-surface px-3.5 py-3 text-left transition-colors ${
-                  fx === "hit"
-                    ? "ss-tile-hit border-sort-orange"
-                    : fx === "miss"
-                      ? "ss-tile-miss border-line"
-                      : selected != null
-                        ? "border-sort-blue/50 hover:border-sort-blue"
-                        : "border-line hover:border-sort-blue/60"
+                className={`relative flex select-none items-center gap-3 rounded-2xl border-2 bg-surface px-3.5 py-3 transition-colors ${
+                  on ? "ss-tile-hit border-sort-orange" : "border-line"
                 }`}
               >
                 <span
                   aria-hidden
-                  className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-full font-display text-[13px] font-bold ${
-                    fx === "hit" ? "bg-sort-orange text-ink" : "bg-blue-deep text-white"
+                  className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-full font-display text-[13px] font-bold transition-colors ${
+                    on ? "bg-sort-orange text-ink" : "bg-blue-deep text-white"
                   }`}
                 >
-                  {fx === "hit" ? "✓" : p.initials}
+                  {on ? "✓" : p.initials}
                 </span>
                 <span className="min-w-0">
-                  <span className="block truncate font-display text-[16px] font-bold text-ink">
-                    {p.name}
-                  </span>
+                  <span className="block truncate font-display text-[16px] font-bold text-ink">{p.name}</span>
                   <span className="block truncate text-[13px] text-ink-muted">{p.role}</span>
                 </span>
-                {fx === "miss" && (
+                {n > 0 && (
                   <span
-                    aria-hidden
-                    className="ss-pop absolute -top-3 right-3 rounded-full bg-ink px-2.5 py-1 text-[11.5px] font-semibold text-white shadow-frame"
+                    className="absolute -top-2.5 right-3 rounded-full bg-ink px-2 py-0.5 text-[11px] font-bold tabular-nums text-white"
+                    aria-label={`${n} routed to ${p.name}`}
                   >
-                    {p.nope}
+                    {n}
                   </span>
                 )}
-              </button>
+              </li>
             );
           })}
-        </div>
+        </ul>
 
         <p className="mt-3 text-right text-[13px]">
           <button

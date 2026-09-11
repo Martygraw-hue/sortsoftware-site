@@ -112,22 +112,75 @@ p {
   .ss-pulse { animation: none; }
 }
 
-/* ---- Right Person Routing game ----
-   Notes are dragged with native pointer events; everything here is
-   transform/opacity so it stays on the compositor. */
-.ss-note {
-  transition: transform 420ms var(--ease-out-strong), opacity 300ms ease, box-shadow 200ms ease;
-  touch-action: none;                 /* drag on touch without scrolling the page */
-  -webkit-user-select: none;
-  user-select: none;
+/* ---- Right Person Routing — the floor-plan HUD ----
+   Everything here is transform/opacity only, so it all runs on the
+   compositor. Geometry lives in components/game/floorplan.ts. */
+
+/* the camera: pans on narrow boards, sits still where the plan fits */
+.ss-cam { transition: transform 700ms var(--ease-out-strong); will-change: transform; }
+
+/* the plan — quiet line-work so the requests are the picture */
+.ss-plan .wall  { fill: none; stroke: #cfcac1; stroke-width: 3; stroke-linecap: square; }
+.ss-plan .fur,
+.ss-plan .seat  { fill: var(--color-paper); stroke: #b9b4aa; stroke-width: 1.2; }
+.ss-plan .gap   { fill: none; stroke: var(--color-surface); stroke-width: 5; }
+.ss-plan .swing { fill: none; stroke: #b9b4aa; stroke-width: 1; stroke-dasharray: 3 3; }
+.ss-plan .zone,
+.ss-plan .tiny  {
+  font-family: var(--font-display);
+  font-weight: 700;
+  text-transform: uppercase;
+  fill: var(--color-ink-muted);
+  stroke: #fff;
+  paint-order: stroke;
 }
-.ss-note.is-dragging {
-  transition: none;
-  z-index: 40;
-  cursor: grabbing;
-  box-shadow: 0 22px 50px rgb(26 29 33 / 0.18);
+.ss-plan .zone { font-size: 10px; letter-spacing: 0.16em; stroke-width: 4; }
+.ss-plan .tiny { font-size: 7.5px; letter-spacing: 0.12em; stroke-width: 3; }
+
+/* where a request is coming from: a glow under the plan, a ring and a dot on top */
+.ss-plan .glow { animation: ss-fade-in 420ms ease-out both; }
+.ss-plan .glow.is-out,
+.ss-plan .pin.is-out { animation: ss-fade-out 320ms ease-in both; }
+.ss-plan .pin .dot { fill: var(--color-sort-orange); stroke: #fff; stroke-width: 2; }
+.ss-plan .pin .ring {
+  fill: none;
+  stroke: var(--color-sort-orange);
+  stroke-width: 2;
+  transform-box: fill-box;
+  transform-origin: center;
+  animation: ss-ring 1600ms ease-out infinite;
 }
-.ss-note.is-auto { z-index: 40; }
+@keyframes ss-fade-in  { from { opacity: 0; } to { opacity: 1; } }
+@keyframes ss-fade-out { from { opacity: 1; } to { opacity: 0; } }
+@keyframes ss-ring {
+  0%   { transform: scale(0.7); opacity: 0.9; }
+  100% { transform: scale(1.55); opacity: 0; }
+}
+
+/* the request: a speech bubble whose tail points at its pin */
+.ss-bubble {
+  position: absolute;
+  padding: 9px 12px 10px;
+  border-radius: 14px;
+  border: 1.5px solid var(--color-ink);
+  background: var(--color-surface);
+  box-shadow: 0 10px 28px rgb(26 29 33 / 0.12);
+  pointer-events: none;
+  will-change: transform, opacity;
+}
+.ss-bubble::after {
+  content: "";
+  position: absolute;
+  left: var(--tail, 22px);
+  margin-left: -7px;
+  width: 14px;
+  height: 14px;
+  background: var(--color-surface);
+  border-right: 1.5px solid var(--color-ink);
+  border-bottom: 1.5px solid var(--color-ink);
+}
+.ss-bubble.tail-b::after { bottom: -8.5px; transform: rotate(45deg); }
+.ss-bubble.tail-t::after { top: -8.5px; transform: rotate(-135deg); }
 
 @keyframes ss-pop {
   0%   { opacity: 0; scale: 0.72; }
@@ -136,21 +189,12 @@ p {
 }
 .ss-pop { animation: ss-pop 380ms var(--ease-out-strong) both; }
 
-/* tile feedback: a warm ring on the right person, a shrug on the wrong one */
+/* the person a request lands on: a warm ring */
 @keyframes ss-tile-hit {
   0%   { box-shadow: 0 0 0 0 rgba(255, 170, 77, 0.65); }
   100% { box-shadow: 0 0 0 14px rgba(255, 170, 77, 0); }
 }
 .ss-tile-hit { animation: ss-tile-hit 650ms ease-out; }
-
-@keyframes ss-tile-miss {
-  0%, 100% { transform: translateX(0); }
-  20%      { transform: translateX(-5px); }
-  40%      { transform: translateX(5px); }
-  60%      { transform: translateX(-3px); }
-  80%      { transform: translateX(3px); }
-}
-.ss-tile-miss { animation: ss-tile-miss 420ms ease-in-out; }
 
 /* phone: new rows drop in from the top, the ticket sheet slides up */
 @keyframes ss-row-in {
@@ -166,8 +210,10 @@ p {
 .ss-sheet-in { animation: ss-sheet-in 260ms var(--ease-out-strong) both; }
 
 @media (prefers-reduced-motion: reduce) {
-  .ss-note { transition: none; }
-  .ss-pop, .ss-tile-hit, .ss-tile-miss, .ss-row-in, .ss-sheet-in { animation: none; }
+  .ss-cam { transition: none; }
+  .ss-plan .pin .ring { animation: none; opacity: 0.6; }
+  .ss-plan .glow, .ss-plan .glow.is-out, .ss-plan .pin.is-out,
+  .ss-pop, .ss-tile-hit, .ss-row-in, .ss-sheet-in { animation: none; }
 }
 
 

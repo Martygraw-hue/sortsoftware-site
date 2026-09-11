@@ -4,10 +4,11 @@ import FounderLetter from "@/components/story/FounderLetter";
 import RoutingGame from "@/components/game/RoutingGame";
 
 /**
- * sortsoftware.com — three fixed-height sections.
+ * sortsoftware.com — three sections (Play and Contact fill the viewport; the story hugs its letter).
  *   1. The game    — one friendly header, then Right Person Routing you can play.
- *   2. The story   — Bill's letter to the operator reading it (FounderLetter).
- *   3. Contact     — a hello, the email, and the booking widget.
+ *   2. Contact     — a hello, the email, and the booking widget.
+ *   3. The story   — Bill's letter to the operator reading it (FounderLetter);
+ *                     hugs its content, no viewport-height floor. Last on the page.
  * Company name, the two apps, the support address, and the legal links live
  * in the footer (the Apple floor). Everything else was cut on purpose.
  */
@@ -40,17 +41,7 @@ export default function Home() {
         </div>
       </section>
 
-      {/* ---- 2. The story ---- */}
-      <section id="story" className="scroll-mt-24 border-t border-line bg-surface">
-        <div className="mx-auto flex min-h-[calc(100svh-96px)] max-w-[1100px] flex-col justify-center px-6 py-16 lg:px-8">
-          <h2 className="mb-10 text-center text-[clamp(1.7rem,2.2vw+0.6rem,2.3rem)] font-bold leading-[1.12] lg:mb-12">
-            Our Story
-          </h2>
-          <FounderLetter />
-        </div>
-      </section>
-
-      {/* ---- 3. Contact ---- */}
+      {/* ---- 2. Contact ---- */}
       <section id="contact" className="scroll-mt-24 border-t border-line">
         <div className="mx-auto max-w-[1160px] px-6 py-20 lg:px-8 lg:py-24">
           <h2 className="text-center text-[clamp(1.7rem,2.2vw+0.6rem,2.3rem)] font-bold leading-[1.12]">
@@ -69,6 +60,14 @@ export default function Home() {
           </div>
         </div>
       </section>
+      {/* ---- 3. The story ---- */}
+      <section id="story" className="scroll-mt-24 border-t border-line bg-surface">
+        <div className="mx-auto max-w-[1160px] px-6 py-12 lg:px-8 lg:py-16">
+          <h2 className="sr-only">Our Story</h2>
+          <FounderLetter />
+        </div>
+      </section>
+
     </>
   );
 }
