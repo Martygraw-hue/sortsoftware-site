@@ -9,7 +9,7 @@ export const metadata: Metadata = {
 export default function SecurityPolicy() {
   return (
     <section className="mx-auto max-w-[760px] px-6 pb-24 pt-12 lg:px-8 lg:pt-16">
-      <Link href="/" className="text-[14px] font-semibold text-blue-deep hover:underline">
+      <Link href="/" className="inline-block py-1 text-[14px] font-semibold text-blue-deep hover:underline">
         &larr; Back to home
       </Link>
       <h1 className="mt-6 text-[30px] font-bold text-ink">Sort Security Policy</h1>
@@ -22,7 +22,7 @@ export default function SecurityPolicy() {
 
         <p>At SORT, we maintain a security system that:</p>
         <ul className="ml-5 list-disc space-y-2">
-          <li>Prevents all unauthorized access.</li>
+          <li>Is designed to prevent unauthorized access.</li>
           <li>Supports continuous monitoring for potential vulnerabilities.</li>
           <li>
             Embraces ongoing, proactive improvement to stay on top of the

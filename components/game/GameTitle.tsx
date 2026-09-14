@@ -156,7 +156,7 @@ export function GameProgress({
         <button
           type="button"
           onClick={onReset}
-          className="ml-auto font-body text-[13px] font-semibold normal-case tracking-normal text-ink-muted underline-offset-4 hover:text-blue-deep hover:underline"
+          className="ml-auto py-1 font-body text-[13px] font-semibold normal-case tracking-normal text-ink-muted underline-offset-4 hover:text-blue-deep hover:underline"
         >
           Start over
         </button>

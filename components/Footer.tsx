@@ -22,13 +22,13 @@ export default function Footer() {
           <div className="grid gap-8 sm:grid-cols-2 md:gap-14">
             <div className="text-[15px] text-white/70">
               <p className="font-semibold text-white">This site</p>
-              <Link href="/#play" className="mt-2 block py-0.5 transition-colors hover:text-white">
+              <Link href="/#play" className="mt-2 block py-1.5 transition-colors hover:text-white">
                 Play
               </Link>
-              <Link href="/#contact" className="mt-1 block py-0.5 transition-colors hover:text-white">
+              <Link href="/#contact" className="mt-1 block py-1.5 transition-colors hover:text-white">
                 Contact
               </Link>
-              <Link href="/#story" className="mt-1 block py-0.5 transition-colors hover:text-white">
+              <Link href="/#story" className="mt-1 block py-1.5 transition-colors hover:text-white">
                 Our Story
               </Link>
                           </div>
@@ -36,13 +36,13 @@ export default function Footer() {
               <p className="font-semibold text-white">Reach us</p>
               <a
                 href="mailto:help@sortsoftware.com"
-                className="mt-2 block py-0.5 transition-colors hover:text-white"
+                className="mt-2 block py-1.5 transition-colors hover:text-white"
               >
                 help@sortsoftware.com
               </a>
               <a
                 href="https://www.sortconnect.com"
-                className="mt-1 block py-0.5 transition-colors hover:text-white"
+                className="mt-1 block py-1.5 transition-colors hover:text-white"
               >
                 sortconnect.com ↗
               </a>

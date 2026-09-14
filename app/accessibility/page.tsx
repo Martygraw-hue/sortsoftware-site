@@ -11,7 +11,7 @@ const linkCls = "font-semibold text-blue-deep underline underline-offset-4";
 export default function Accessibility() {
   return (
     <section className="mx-auto max-w-[760px] px-6 pb-24 pt-12 lg:px-8 lg:pt-16">
-      <Link href="/" className="text-[14px] font-semibold text-blue-deep hover:underline">
+      <Link href="/" className="inline-block py-1 text-[14px] font-semibold text-blue-deep hover:underline">
         &larr; Back to Sort Software
       </Link>
       <h1 className="mt-6 text-[30px] font-bold text-ink">Accessibility Statement</h1>
