@@ -71,6 +71,12 @@ export default function Footer() {
             <Link className="inline-block py-1 transition-colors hover:text-white" href="/accessibility">
               Accessibility
             </Link>
+            <a
+              href="https://app.termly.io/notify/7651ebbb-c43d-4714-a916-161bb76275f8"
+              className="inline-block py-1 transition-colors hover:text-white"
+            >
+              Do Not Sell or Share My Personal Information
+            </a>
             {/* Termly's script turns this into the consent preference center */}
             <a href="#" className="termly-display-preferences inline-block py-1 transition-colors hover:text-white">
               Consent Preferences
