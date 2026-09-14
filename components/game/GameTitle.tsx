@@ -24,7 +24,7 @@ export default function GameTitle({
     "flex h-7 w-7 shrink-0 items-center justify-center rounded-md border-2 border-ink text-ink transition-colors hover:bg-ink hover:text-sort-orange";
   /* fixed widths on every cell so the arrows never move when the names change */
   const ghost =
-    "hidden w-[150px] whitespace-nowrap text-center text-[9.5px] tracking-[0.1em] text-[#b8bcc2] sm:block";
+    "hidden w-[150px] whitespace-nowrap text-center text-[9.5px] tracking-[0.1em] text-[#6a7079] sm:block";
   return (
     <div className="mb-12 flex flex-col items-center text-center lg:mb-14">
       {/* the industry picker: a carousel of names — the neighbours sit ghosted
