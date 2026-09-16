@@ -59,6 +59,9 @@ export default function Footer() {
             <Link className="inline-block py-1 transition-colors hover:text-white" href="/terms-and-conditions">
               Terms &amp; Conditions
             </Link>
+            <Link className="inline-block py-1 transition-colors hover:text-white" href="/manage-plan">
+              Manage Your Plan
+            </Link>
             <Link className="inline-block py-1 transition-colors hover:text-white" href="/refund-policy">
               Refund Policy
             </Link>

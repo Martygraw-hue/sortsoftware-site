@@ -13,7 +13,7 @@ export default function RefundPolicy() {
         &larr; Back to home
       </Link>
       <h1 className="mt-6 text-[30px] font-bold text-ink">Refund Policy</h1>
-      <p className="mt-2 text-[14px] text-ink-muted">Last updated: September 15, 2026</p>
+      <p className="mt-2 text-[14px] text-ink-muted">Last updated: September 16, 2026</p>
       <div className="mt-6 grid gap-4 text-[16px] leading-relaxed text-ink-muted">
         <p>
           We want you to be happy with SORT. If something is not working for
@@ -30,10 +30,18 @@ export default function RefundPolicy() {
         </p>
         <p>
           <strong className="font-semibold text-ink">Cancellation.</strong> You
-          can cancel your subscription at any time from the Subscription page
-          in your account settings. Cancellation takes effect at the end of the
-          current paid term; you keep access until then, and you will not be
-          charged again after that.
+          can cancel at any time. Email{" "}
+          <a href="mailto:help@sortsoftware.com" className="font-semibold text-blue-deep hover:underline">
+            help@sortsoftware.com
+          </a>{" "}
+          from the address on your account and we will cancel the subscription
+          for you and reply to confirm. Cancellation takes effect at the end of
+          the current paid term; you keep access until then, and you will not
+          be charged again after that. Our{" "}
+          <Link href="/manage-plan" className="font-semibold text-blue-deep hover:underline">
+            Manage Your Plan
+          </Link>{" "}
+          page has the full details.
         </p>
         <p>
           This policy is part of our{" "}
