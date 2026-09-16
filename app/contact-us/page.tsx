@@ -30,24 +30,6 @@ export default function ContactUs() {
       <h1 className="text-[clamp(2rem,3.5vw+0.75rem,3rem)] font-bold leading-[1.1] tracking-[-0.01em]">
         Contact Us
       </h1>
-      <p className="mt-4 max-w-[60ch] text-[17px] leading-relaxed text-ink">
-        Tell us what you need and we will get back to you. You can also call us
-        at{" "}
-        <a
-          href="tel:+13106141003"
-          className="font-semibold text-blue-deep underline underline-offset-4"
-        >
-          (310) 614-1003
-        </a>{" "}
-        or email{" "}
-        <a
-          href="mailto:help@sortsoftware.com"
-          className="font-semibold text-blue-deep underline underline-offset-4"
-        >
-          help@sortsoftware.com
-        </a>
-        .
-      </p>
 
       <div className="mt-8 overflow-hidden rounded-2xl border border-line bg-surface">
         <iframe
