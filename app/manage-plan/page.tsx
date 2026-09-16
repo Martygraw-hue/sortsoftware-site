@@ -2,33 +2,40 @@ import type { Metadata } from "next";
 import Link from "next/link";
 
 /**
- * /manage-plan — the one page that answers "how do I cancel?".
+ * /manage-plan — the formal statement of how a SORT subscription is
+ * cancelled, written to sit beside the Refund Policy, Terms and Security
+ * Policy on this site. The customer-facing version, in the marketing voice,
+ * is at sortconnect.com/manage-plan; the two pages state the same facts and
+ * are deliberately worded differently, so edit both when a fact changes.
  *
  * Unlisted but deliberately linked: the footer points here from every page,
  * so customers can always find it, while `index: false` keeps it out of
  * search results. Crawling stays allowed (no robots.txt Disallow) — a
  * disallowed page can never be read, so the noindex below would never be
- * seen. `follow` stays true, unlike /set-up on the Connect site, because the
- * links out of this page go to policies we do want indexed.
+ * seen. `follow` stays true because the links out of this page go to
+ * policies we do want indexed.
  *
- * STRIPE_PORTAL_URL is the whole switch. While it is empty the page offers
+ * STRIPE_PORTAL_URL is the whole switch. While it is empty the page states
  * the email route, which is what actually happens today. Once the customer
  * portal is activated in the Stripe dashboard, paste the login link
  * (https://billing.stripe.com/p/login/...) into the constant and the button
  * and the billing copy both become the self-serve version. Nothing else to
- * change, and the page never promises a button that does not work.
+ * change, and the page never promises a button that does not work. Keep this
+ * constant in step with the same page on sort-connect-site.
  */
 const STRIPE_PORTAL_URL = "";
 
 export const metadata: Metadata = {
   title: "Manage Your Plan",
   description:
-    "How to cancel your SORT subscription, when cancellation takes effect, and who to contact about billing.",
+    "How to cancel a SORT subscription, when cancellation takes effect, and where billing is handled.",
   robots: { index: false, follow: true },
 };
 
 const CANCEL_MAILTO =
-  "mailto:help@sortsoftware.com?subject=Cancel%20my%20SORT%20subscription&body=Please%20cancel%20my%20SORT%20subscription.%0A%0AAccount%20name%3A%0A";
+  "mailto:help@sortsoftware.com?subject=Cancel%20my%20SORT%20subscription&body=Please%20cancel%20my%20SORT%20subscription.%0A%0ABusiness%20name%3A%0A";
+
+const link = "font-semibold text-blue-deep hover:underline";
 
 export default function ManagePlan() {
   const portal = STRIPE_PORTAL_URL.length > 0;
@@ -43,38 +50,40 @@ export default function ManagePlan() {
 
       <div className="mt-6 grid gap-4 text-[16px] leading-relaxed text-ink-muted">
         <p>
-          Everything about your SORT subscription in one place: how to cancel,
-          when the cancellation takes effect, and who to ask about billing.
+          This page sets out how a SORT subscription is cancelled and where
+          billing is handled. It sits alongside our{" "}
+          <Link href="/refund-policy" className={link}>
+            Refund Policy
+          </Link>{" "}
+          and{" "}
+          <Link href="/terms-and-conditions" className={link}>
+            Terms and Conditions
+          </Link>
+          .
         </p>
 
-        <h2 className="mt-4 text-[20px] font-bold text-ink">Cancelling</h2>
+        <h2 className="mt-4 text-[20px] font-bold text-ink">How to cancel</h2>
         {portal ? (
           <p>
-            You can cancel your subscription yourself in the billing portal.
-            Open it with the button below, sign in with the email address on
-            your account, and choose to cancel. You can also email{" "}
-            <a href="mailto:help@sortsoftware.com" className="font-semibold text-blue-deep hover:underline">
+            Cancel the subscription yourself in the billing portal: open it
+            with the button below and sign in with the email address on the
+            account. You may also send the request to{" "}
+            <a href="mailto:help@sortsoftware.com" className={link}>
               help@sortsoftware.com
             </a>{" "}
-            and we will do it for you.
+            and we will process it for you.
           </p>
         ) : (
           <p>
-            Email{" "}
-            <a href="mailto:help@sortsoftware.com" className="font-semibold text-blue-deep hover:underline">
+            Send the request to{" "}
+            <a href="mailto:help@sortsoftware.com" className={link}>
               help@sortsoftware.com
             </a>{" "}
-            from the address on your account and tell us you would like to
-            cancel. We will cancel the subscription and reply to confirm.
-            There is no cancellation fee and no phone call to sit through
-            &mdash; one email is enough.
+            from the email address on the account. We cancel the subscription
+            and reply to confirm. No fee applies, and no call or written notice
+            period is required.
           </p>
         )}
-        <p>
-          Cancellation takes effect at the end of your current paid term. You
-          keep full access until then, and you will not be charged again after
-          that date.
-        </p>
 
         <div className="mt-2">
           <a
@@ -85,37 +94,45 @@ export default function ManagePlan() {
           </a>
         </div>
 
+        <h2 className="mt-6 text-[20px] font-bold text-ink">
+          When cancellation takes effect
+        </h2>
+        <p>
+          Cancellation takes effect at the end of the current paid term. Access
+          continues until that date and no further charge is made after it. The
+          subscription does not renew once it has been cancelled.
+        </p>
+
         <h2 className="mt-6 text-[20px] font-bold text-ink">Billing and invoices</h2>
         {portal ? (
           <p>
-            The same billing portal is where you update the card on file and
-            download current and past invoices.
+            The billing portal is also where the card on file is updated and
+            current and past invoices are downloaded.
           </p>
         ) : (
           <p>
-            To update the card on file, change your plan, or get a copy of an
-            invoice, email the same address and we will take care of it.
+            Requests to update the card on file, change a plan, or obtain a
+            copy of an invoice go to the same address.
           </p>
         )}
 
         <h2 className="mt-6 text-[20px] font-bold text-ink">Refunds</h2>
         <p>
-          Refunds are granted at our discretion. Our{" "}
-          <Link href="/refund-policy" className="font-semibold text-blue-deep hover:underline">
+          Cancelling stops future charges; it does not by itself refund a term
+          already paid for. Refunds are granted at our discretion, and our{" "}
+          <Link href="/refund-policy" className={link}>
             Refund Policy
           </Link>{" "}
-          explains how to ask for one and what we look at.
+          explains how to request one.
         </p>
 
-        <h2 className="mt-6 text-[20px] font-bold text-ink">Anything else</h2>
+        <h2 className="mt-6 text-[20px] font-bold text-ink">Questions</h2>
         <p>
-          If you are not sure what you are paying for, or something is not
-          working and you are thinking about leaving over it, write to us
-          first at{" "}
-          <a href="mailto:help@sortsoftware.com" className="font-semibold text-blue-deep hover:underline">
+          Anything about an account, a charge, or this page:{" "}
+          <a href="mailto:help@sortsoftware.com" className={link}>
             help@sortsoftware.com
           </a>
-          . We would rather fix it than lose you.
+          .
         </p>
       </div>
     </section>

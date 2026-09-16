@@ -52,39 +52,46 @@ export default function Footer() {
 
         <div className="mt-12 flex flex-col gap-2 border-t border-white/15 pt-6 text-[13px] text-white/50 md:flex-row md:justify-between">
           <p className="py-1">&copy; {new Date().getFullYear()} SORT Software LLC. All rights reserved.</p>
-          <p className="flex flex-wrap gap-x-4 gap-y-1">
-            <Link className="inline-block py-1 transition-colors hover:text-white" href="/privacy-policy">
-              Privacy Policy
-            </Link>
-            <Link className="inline-block py-1 transition-colors hover:text-white" href="/terms-and-conditions">
-              Terms &amp; Conditions
-            </Link>
-            <Link className="inline-block py-1 transition-colors hover:text-white" href="/manage-plan">
-              Manage Your Plan
-            </Link>
-            <Link className="inline-block py-1 transition-colors hover:text-white" href="/refund-policy">
-              Refund Policy
-            </Link>
-            <Link className="inline-block py-1 transition-colors hover:text-white" href="/security-policy">
-              Security Policy
-            </Link>
-            <Link className="inline-block py-1 transition-colors hover:text-white" href="/cookie-policy">
-              Cookie Policy
-            </Link>
-            <Link className="inline-block py-1 transition-colors hover:text-white" href="/accessibility">
-              Accessibility
-            </Link>
-            <a
-              href="https://app.termly.io/notify/7651ebbb-c43d-4714-a916-161bb76275f8"
-              className="inline-block py-1 transition-colors hover:text-white"
-            >
-              Do Not Sell or Share My Personal Information
-            </a>
-            {/* Termly's script turns this into the consent preference center */}
-            <a href="#" className="termly-display-preferences inline-block py-1 transition-colors hover:text-white">
-              Consent Preferences
-            </a>
-          </p>
+          {/* Two balanced rows, matching sortconnect.com: one wrapping run
+              stranded the last links on a line of their own, so the long
+              "Do Not Sell" link anchors the second row instead. */}
+          <div className="flex flex-col md:items-end">
+            <p className="flex flex-wrap gap-x-4 md:justify-end">
+              <Link className="inline-block py-1 transition-colors hover:text-white" href="/privacy-policy">
+                Privacy Policy
+              </Link>
+              <Link className="inline-block py-1 transition-colors hover:text-white" href="/terms-and-conditions">
+                Terms &amp; Conditions
+              </Link>
+              <Link className="inline-block py-1 transition-colors hover:text-white" href="/manage-plan">
+                Manage Your Plan
+              </Link>
+              <Link className="inline-block py-1 transition-colors hover:text-white" href="/refund-policy">
+                Refund Policy
+              </Link>
+              <Link className="inline-block py-1 transition-colors hover:text-white" href="/security-policy">
+                Security Policy
+              </Link>
+            </p>
+            <p className="flex flex-wrap gap-x-4 md:justify-end">
+              <Link className="inline-block py-1 transition-colors hover:text-white" href="/cookie-policy">
+                Cookie Policy
+              </Link>
+              <Link className="inline-block py-1 transition-colors hover:text-white" href="/accessibility">
+                Accessibility
+              </Link>
+              <a
+                href="https://app.termly.io/notify/7651ebbb-c43d-4714-a916-161bb76275f8"
+                className="inline-block py-1 transition-colors hover:text-white"
+              >
+                Do Not Sell or Share My Personal Information
+              </a>
+              {/* Termly's script turns this into the consent preference center */}
+              <a href="#" className="termly-display-preferences inline-block py-1 transition-colors hover:text-white">
+                Consent Preferences
+              </a>
+            </p>
+          </div>
         </div>
       </div>
     </footer>
