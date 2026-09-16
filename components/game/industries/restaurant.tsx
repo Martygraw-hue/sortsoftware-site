@@ -59,7 +59,7 @@ const plan = (
     <rect className="fur" x="372" y="322" width="40" height="22" rx="2" />
 
     {/* restrooms */}
-    <Restroom x={678} y={300} />
+    <Restroom x={706} y={278} />
     <text className="zone" x="628" y="350">
       Restrooms
     </text>
@@ -90,7 +90,7 @@ export const restaurant = defineIndustry({
       { x: 460, y: 290 },
       { x: 540, y: 290 },
     ],
-    restrooms: [{ x: 678, y: 300 }],
+    restrooms: [{ x: 672, y: 306 }],
     entrance: [
       { x: 392, y: 333 }, // host stand
       { x: 330, y: 350 }, // the front door

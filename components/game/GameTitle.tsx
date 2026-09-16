@@ -23,8 +23,9 @@ export default function GameTitle({
   const arrow =
     "flex h-7 w-7 shrink-0 items-center justify-center rounded-md border-2 border-ink text-ink transition-colors hover:bg-ink hover:text-sort-orange";
   /* fixed widths on every cell so the arrows never move when the names change */
+  /* the ghosted neighbours are buttons too — clicking a name switches to it */
   const ghost =
-    "hidden w-[150px] whitespace-nowrap text-center text-[9.5px] tracking-[0.1em] text-[#6a7079] sm:block";
+    "hidden w-[150px] whitespace-nowrap rounded-md py-1 text-center text-[9.5px] uppercase tracking-[0.1em] text-[#6a7079] transition-colors hover:text-ink sm:block";
   return (
     <div className="mb-12 flex flex-col items-center text-center lg:mb-14">
       {/* the industry picker: a carousel of names — the neighbours sit ghosted
@@ -52,18 +53,28 @@ export default function GameTitle({
             />
           </svg>
         </button>
-        <span aria-hidden className={ghost}>
+        <button
+          type="button"
+          onClick={onPrev}
+          aria-label={`Switch to ${prevLabel}`}
+          className={ghost}
+        >
           {prevLabel}
-        </span>
+        </button>
         <span
           className="w-[200px] whitespace-nowrap rounded-md bg-ink px-3 py-2 text-[11px] tracking-[0.12em] text-white sm:w-[220px] sm:text-[12px]"
           aria-live="polite"
         >
           {label}
         </span>
-        <span aria-hidden className={ghost}>
+        <button
+          type="button"
+          onClick={onNext}
+          aria-label={`Switch to ${nextLabel}`}
+          className={ghost}
+        >
           {nextLabel}
-        </span>
+        </button>
         <button
           type="button"
           onClick={onNext}

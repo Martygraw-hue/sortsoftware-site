@@ -66,7 +66,7 @@ const plan = (
     </text>
 
     {/* restroom */}
-    <Restroom x={678} y={290} />
+    <Restroom x={706} y={252} />
     <text className="zone" x="632" y="352">
       Restroom
     </text>
@@ -99,7 +99,7 @@ export const medical = defineIndustry({
       { x: 202, y: 241 },
       { x: 47, y: 291 },
     ],
-    restroom: [{ x: 678, y: 290 }],
+    restroom: [{ x: 672, y: 296 }],
     desk: [
       { x: 435, y: 312 },
       { x: 160, y: 350 }, // the front door

@@ -48,8 +48,6 @@ const plan = (
     <rect className="fur" x="40" y="292" width="130" height="24" rx="2" />
     <rect className="seat" x="58" y="298" width="18" height="12" rx="2" />
     <rect className="seat" x="118" y="298" width="18" height="12" rx="2" />
-    <circle className="fur" cx="67" cy="278" r="6" />
-    <circle className="fur" cx="127" cy="278" r="6" />
     <text className="zone" x="40" y="352">
       Checkout
     </text>
@@ -63,7 +61,7 @@ const plan = (
     </text>
 
     {/* restroom */}
-    <Restroom x={668} y={306} />
+    <Restroom x={706} y={290} />
     <text className="zone" x="604" y="352">
       Restroom
     </text>

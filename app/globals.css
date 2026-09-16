@@ -152,6 +152,29 @@ p {
   transform-origin: center;
   animation: ss-ring 1600ms ease-out infinite;
 }
+/* the pawns — a hop is one translate on the outer group plus an arc on the body
+   and a squash on the shadow, both restarted per hop */
+.ss-plan .pawn { will-change: transform; }
+.ss-plan .pawn-body {
+  transform-box: fill-box;
+  transform-origin: 50% 100%;
+  animation: ss-hop 400ms ease-out both;
+}
+.ss-plan .pawn-shadow {
+  transform-box: fill-box;
+  transform-origin: center;
+  animation: ss-hop-shadow 400ms ease-out both;
+}
+@keyframes ss-hop {
+  0%   { transform: translateY(0) rotate(0deg); }
+  45%  { transform: translateY(-7px) rotate(var(--rock, 6deg)); }
+  100% { transform: translateY(0) rotate(0deg); }
+}
+@keyframes ss-hop-shadow {
+  0%   { transform: scale(1); opacity: 0.16; }
+  45%  { transform: scale(0.7); opacity: 0.08; }
+  100% { transform: scale(1); opacity: 0.16; }
+}
 @keyframes ss-fade-in  { from { opacity: 0; } to { opacity: 1; } }
 @keyframes ss-fade-out { from { opacity: 1; } to { opacity: 0; } }
 @keyframes ss-ring {

@@ -1,5 +1,6 @@
 import type { ReactNode } from "react";
 import { STAGE_H, STAGE_W, type Spot } from "./stage";
+import Pawns, { type PawnView } from "./Pawns";
 
 /**
  * FloorPlan — the frame every industry's plan is drawn in: the glow under
@@ -9,14 +10,16 @@ import { STAGE_H, STAGE_W, type Spot } from "./stage";
  * here so they scale with the plan. Styling lives in globals.css under `.ss-plan`.
  */
 
-export type Pin = Spot & { id: number; out: boolean };
+export type Pin = Spot & { id: number; out: boolean; dot?: boolean; gy: number };
 
 export default function FloorPlan({
   pins,
   plan,
+  pawns,
 }: {
   pins: Pin[];
   plan: ReactNode;
+  pawns: PawnView[];
 }) {
   return (
     <svg
@@ -34,22 +37,26 @@ export default function FloorPlan({
         </radialGradient>
       </defs>
 
-      {/* the glow sits under the walls so the plan stays crisp on top */}
+      {plan}
+
+      {/* the glow: over the walls (so a doorway's white stroke can't cut it),
+          under the pawns; small, centred on the sender's feet */}
       {pins.map((p) => (
         <circle
           key={`g${p.id}`}
           className={`glow ${p.out ? "is-out" : ""}`}
           cx={p.x}
-          cy={p.y}
-          r="110"
+          cy={p.gy}
+          r={p.dot ? 70 : 52}
           fill="url(#ss-glow)"
         />
       ))}
 
-      {plan}
+      {/* the people on the floor — under the pins so a pin blooms over its pawn */}
+      <Pawns pawns={pawns} />
 
       {/* where the live requests are coming from */}
-      {pins.map((p) => (
+      {pins.filter((p) => p.dot).map((p) => (
         <g key={p.id} className={`pin ${p.out ? "is-out" : ""}`}>
           <circle className="ring" cx={p.x} cy={p.y} r="12" />
           <circle className="dot" cx={p.x} cy={p.y} r="5" />
