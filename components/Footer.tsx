@@ -40,6 +40,12 @@ export default function Footer() {
               >
                 help@sortsoftware.com
               </a>
+              <a href="tel:+13106141003" className="mt-1 block py-1.5 transition-colors hover:text-white">
+                (310) 614-1003
+              </a>
+              <Link href="/contact-us" className="mt-1 block py-1.5 transition-colors hover:text-white">
+                Contact Us
+              </Link>
               <a
                 href="https://www.sortconnect.com"
                 className="mt-1 block py-1.5 transition-colors hover:text-white"
@@ -54,7 +60,9 @@ export default function Footer() {
           <p className="py-1">&copy; {new Date().getFullYear()} SORT Software LLC. All rights reserved.</p>
           {/* Two balanced rows, matching sortconnect.com: one wrapping run
               stranded the last links on a line of their own, so the long
-              "Do Not Sell" link anchors the second row instead. */}
+              "Do Not Sell" link anchors the second row instead. Subscriptions
+              are managed at sortconnect.com/manage-plan, linked from the
+              Refund Policy — this site does not carry its own copy. */}
           <div className="flex flex-col md:items-end">
             <p className="flex flex-wrap gap-x-4 md:justify-end">
               <Link className="inline-block py-1 transition-colors hover:text-white" href="/privacy-policy">
@@ -62,9 +70,6 @@ export default function Footer() {
               </Link>
               <Link className="inline-block py-1 transition-colors hover:text-white" href="/terms-and-conditions">
                 Terms &amp; Conditions
-              </Link>
-              <Link className="inline-block py-1 transition-colors hover:text-white" href="/manage-plan">
-                Manage Your Plan
               </Link>
               <Link className="inline-block py-1 transition-colors hover:text-white" href="/refund-policy">
                 Refund Policy

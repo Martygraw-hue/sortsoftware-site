@@ -29,18 +29,27 @@ export default function RefundPolicy() {
           review it and reply.
         </p>
         <p>
+          <strong className="font-semibold text-ink">Renewal.</strong>{" "}
+          Subscriptions renew automatically each month until they are
+          cancelled. There is no minimum term and no notice period.
+        </p>
+        <p>
           <strong className="font-semibold text-ink">Cancellation.</strong> You
-          can cancel at any time. Email{" "}
+          can cancel at any time from the Subscription page in your account
+          settings: choose Manage Subscription to open your billing portal. If
+          you cannot get in, email{" "}
           <a href="mailto:help@sortsoftware.com" className="font-semibold text-blue-deep hover:underline">
             help@sortsoftware.com
           </a>{" "}
-          from the address on your account and we will cancel the subscription
-          for you and reply to confirm. Cancellation takes effect at the end of
-          the current paid term; you keep access until then, and you will not
-          be charged again after that. Our{" "}
-          <Link href="/manage-plan" className="font-semibold text-blue-deep hover:underline">
+          and we will cancel it for you and reply to confirm. Cancellation
+          takes effect at the end of the current paid term; you keep access
+          until then, and you will not be charged again after that. Our{" "}
+          <a
+            href="https://www.sortconnect.com/manage-plan"
+            className="font-semibold text-blue-deep hover:underline"
+          >
             Manage Your Plan
-          </Link>{" "}
+          </a>{" "}
           page has the full details.
         </p>
         <p>
